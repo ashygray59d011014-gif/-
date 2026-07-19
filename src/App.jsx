@@ -20,12 +20,12 @@ const INITIAL_GAME_STATE = {
     { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
     { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
     { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'F급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } },
-    { id: 'q1', title: '고블린 소굴 토벌', desc: '외곽 지역에 출몰하는 고블린 무리를 소탕해야 합니다.', rank: 'D급', successRate: 95, rewards: { gold: 200, exp: 100, fame: 5 } },
-    { id: 'q2', title: '안개 숲 마수 토벌', desc: '숲을 장악한 거대한 마수들을 쫓아내고 평화를 되찾으세요.', rank: 'C급', successRate: 85, rewards: { gold: 500, exp: 200, fame: 10 } },
-    { id: 'q3', title: '대주교의 만찬회 참석', desc: '베니고어 교단 대주교의 만찬회에 참석하여 교류를 다집니다.', rank: 'B급', successRate: 90, rewards: { gold: 800, exp: 300, fame: 20 } },
-    { id: 'q4', title: '거울 던전 탐사', desc: '현실과 환상이 교차하는 거울 던전의 심연을 조사하십시오.', rank: 'A급', successRate: 75, rewards: { gold: 1500, exp: 500, fame: 30 } },
-    { id: 'q5', title: '악마 소환사 추적', desc: '금지된 흑마법으로 악마를 부리는 이단자를 처단해야 합니다.', rank: 'S급', successRate: 60, rewards: { gold: 3000, exp: 1000, fame: 50 } },
-    { id: 'q6', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
+    { id: 'q4', title: '고블린 소굴 토벌', desc: '외곽 지역에 출몰하는 고블린 무리를 소탕해야 합니다.', rank: 'D급', successRate: 95, rewards: { gold: 200, exp: 100, fame: 5 } },
+    { id: 'q5', title: '안개 숲 마수 토벌', desc: '숲을 장악한 거대한 마수들을 쫓아내고 평화를 되찾으세요.', rank: 'C급', successRate: 85, rewards: { gold: 500, exp: 200, fame: 10 } },
+    { id: 'q6', title: '대주교의 만찬회 참석', desc: '베니고어 교단 대주교의 만찬회에 참석하여 교류를 다집니다.', rank: 'B급', successRate: 90, rewards: { gold: 800, exp: 300, fame: 20 } },
+    { id: 'q7', title: '거울 던전 탐사', desc: '현실과 환상이 교차하는 거울 던전의 심연을 조사하십시오.', rank: 'A급', successRate: 75, rewards: { gold: 1500, exp: 500, fame: 30 } },
+    { id: 'q8', title: '악마 소환사 추적', desc: '금지된 흑마법으로 악마를 부리는 이단자를 처단해야 합니다.', rank: 'S급', successRate: 60, rewards: { gold: 3000, exp: 1000, fame: 50 } },
+    { id: 'q9', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
   ],
   activeQuests: [], 
   inventory: [] // 창고 인벤토리 초기화
@@ -918,75 +918,6 @@ const ActiveQuestCard = ({ activeQuest, onComplete }) => {
             </div>
         </div>
     )
-};
-
-const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQuest }) => {
-    const [selectedQuest, setSelectedQuest] = useState(null);
-
-    return (
-        <div className="w-full h-full px-4 pb-8 space-y-4">
-            {activeQuests.length > 0 && (
-                <div className="mb-6 space-y-3">
-                    <h3 className="text-sm text-[#bdc2ff] font-bold flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px]">hourglass_empty</span>
-                        현재 진행 중인 임무
-                    </h3>
-                    {activeQuests.map(aq => (
-                        <ActiveQuestCard key={aq.id} activeQuest={aq} onComplete={() => onCompleteQuest(aq)} />
-                    ))}
-                    <div className="border-b-2 border-dashed border-[#4d4635] pt-2 mb-4"></div>
-                </div>
-            )}
-
-            <h3 className="text-sm text-[#d0c5af] font-bold">수행 가능한 임무</h3>
-            {quests.map(quest => (
-                <div key={quest.id} className="bg-[#1c1b1b] border border-[#f2ca50]/30 rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#f2ca50]/60">
-                    <div className="relative h-24 w-full bg-[#2a2a2a]">
-                        <div className="absolute top-3 left-3 bg-[#f2ca50] text-[#3c2f00] px-3 py-1 rounded-lg font-bold shadow-sm">
-                            {quest.rank}
-                        </div>
-                    </div>
-                    <div className="p-4 space-y-4">
-                        <div>
-                            <h3 className="text-xl text-[#f2ca50]">{quest.title}</h3>
-                            <p className="text-sm text-[#d0c5af]">{quest.desc}</p>
-                        </div>
-                        <div className="space-y-1">
-                            <div className="flex justify-between text-xs text-[#d0c5af]">
-                                <span>기본 성공률</span>
-                                <span className="text-[#f2ca50]">{quest.successRate}%</span>
-                            </div>
-                            <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#f2ca50]" style={{ width: `${quest.successRate}%` }}></div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
-                            <div className="flex items-center gap-1 text-[#f2ca50]">
-                                <span className="material-symbols-outlined text-sm fill">payments</span>
-                                <span className="text-sm font-bold">{quest.rewards.gold}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[#4ade80]">
-                                <span className="material-symbols-outlined text-sm fill">star</span>
-                                <span className="text-sm font-bold">{quest.rewards.exp}</span>
-                            </div>
-                        </div>
-                        <button onClick={() => setSelectedQuest(quest)} className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-transform hover:brightness-110">
-                            임무 인원 배치
-                        </button>
-                    </div>
-                </div>
-            ))}
-            
-            {selectedQuest && (
-                <SelectMemberModal 
-                    quest={selectedQuest} 
-                    members={members} 
-                    onConfirm={(q, m) => { setSelectedQuest(null); onStartQuest(q, m); }} 
-                    onClose={() => setSelectedQuest(null)} 
-                />
-            )}
-        </div>
-    );
 };
 
 const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQuest }) => {
