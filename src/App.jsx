@@ -307,20 +307,33 @@ const HomeView = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-end relative pb-8">
-        {/* --- 메인 화면 중앙 캐릭터 이미지 시작 --- */}
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10 pointer-events-none pb-20">
+    <div className="w-full h-full flex flex-col relative overflow-hidden">
+        {/* --- 1. 신규 추가: 홈 화면 전체 뒷배경 (배경1.png) --- */}
+        <div className="absolute inset-0 z-0">
+            <img 
+                src="./images/배경1.png" 
+                alt="길드 배경" 
+                className="w-full h-full object-cover"
+                onError={handleImageError}
+            />
+            {/* 밝은 배경에서 좌측 UI(상태창, 알림창)가 잘 보이도록 어두운 그라데이션 오버레이 추가 */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+        </div>
+
+        {/* --- 2. 기존 캐릭터 이미지 유지 --- */}
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10 pointer-events-none pb-10">
             <img 
                 src="./images/이기영-빛의성자.png" 
                 alt="이기영 빛의 성자" 
-                className="h-[85%] max-h-[800px] object-contain object-bottom drop-shadow-[0_0_20px_rgba(242,202,80,0.15)]"
+                className="h-[90%] max-h-[800px] object-contain object-bottom drop-shadow-[0_0_20px_rgba(242,202,80,0.15)]"
                 onError={handleImageError} 
             />
         </div>
-        {/* --- 메인 화면 중앙 캐릭터 이미지 끝 --- */}
 
+        {/* --- 좌측 상단 길드 상태창 --- */}
         <div className="absolute left-4 top-4 flex flex-col gap-4 w-48 z-20">
-            <div className="bg-[#2a2a2a]/90 backdrop-blur p-3 rounded-lg border-l-2 border-[#f2ca50] shadow-md">
+            <div className="bg-[#2a2a2a]/80 backdrop-blur p-3 rounded-lg border-l-2 border-[#f2ca50] shadow-md">
                 <div className="flex justify-between items-end mb-1">
                     <span className="text-xs text-[#d0c5af]">길드원 지지도</span>
                     <span className="text-sm text-[#f2ca50]">42%</span>
@@ -329,7 +342,7 @@ const HomeView = () => {
                     <div className="h-full bg-[#f2ca50] shadow-[0_0_8px_rgba(242,202,80,0.4)]" style={{ width: '42%' }}></div>
                 </div>
             </div>
-            <div className="bg-[#2a2a2a]/90 backdrop-blur p-3 rounded-lg border-l-2 border-[#bdc2ff] shadow-md">
+            <div className="bg-[#2a2a2a]/80 backdrop-blur p-3 rounded-lg border-l-2 border-[#bdc2ff] shadow-md">
                 <div className="flex justify-between items-end mb-1">
                     <span className="text-xs text-[#d0c5af]">대륙 인지도</span>
                     <span className="text-sm text-[#bdc2ff]">8%</span>
@@ -340,21 +353,22 @@ const HomeView = () => {
             </div>
         </div>
 
-        <div className="relative z-20 w-[90%] max-w-md bg-[#14141e]/85 backdrop-blur-md border border-[#e9c349]/40 p-5 rounded-xl shadow-2xl mb-[20px]">
-            <div className="flex items-start gap-4">
-                <div className="w-10 h-10 flex-shrink-0 bg-[#f2ca50]/20 rounded-full flex items-center justify-center border border-[#f2ca50]/40">
-                    <span className="material-symbols-outlined text-[#f2ca50] fill">auto_awesome</span>
+        {/* --- 3. 알람 느낌으로 화면 좌측에 배치된 여신의 한마디 --- */}
+        <div className="absolute left-4 top-[140px] z-20 w-[240px] bg-[#14141e]/90 backdrop-blur-md border border-[#e9c349]/50 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] animate-in slide-in-from-left-4 duration-500">
+            <div className="flex items-start gap-3">
+                <div className="w-8 h-8 flex-shrink-0 bg-[#f2ca50]/20 rounded-full flex items-center justify-center border border-[#f2ca50]/40">
+                    <span className="material-symbols-outlined text-[#f2ca50] fill text-[18px] animate-pulse">notifications_active</span>
                 </div>
                 <div className="flex-1">
-                    <p className="text-xs text-[#f2ca50] mb-1 tracking-wider">베니고어 여신의 한 마디</p>
-                    <p className="text-lg leading-relaxed italic text-[#e5e2e1]">
+                    <p className="text-[10px] text-[#f2ca50] mb-1 tracking-wider font-bold">새로운 메시지 도착</p>
+                    <p className="text-xs leading-relaxed italic text-[#e5e2e1] break-keep">
                         {currentDialog}
                     </p>
                 </div>
             </div>
-            <button onClick={handleChangeDialog} className="mt-4 w-full py-2 bg-[#201f1f] border border-[#4d4635] hover:bg-[#393939] transition-colors rounded text-xs text-[#d0c5af] tracking-widest flex items-center justify-center gap-2 active:scale-95">
-                다른 말씀 듣기
-                <span className="material-symbols-outlined text-[14px]">refresh</span>
+            <button onClick={handleChangeDialog} className="mt-4 w-full py-2 bg-[#201f1f]/50 border border-[#4d4635] hover:bg-[#393939] transition-colors rounded text-[10px] text-[#d0c5af] flex items-center justify-center gap-1 active:scale-95">
+                다음 메시지 보기
+                <span className="material-symbols-outlined text-[12px]">refresh</span>
             </button>
         </div>
     </div>
