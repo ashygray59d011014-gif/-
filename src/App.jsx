@@ -308,6 +308,17 @@ const HomeView = () => {
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-end relative pb-8">
+        {/* --- 메인 화면 중앙 캐릭터 이미지 시작 --- */}
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden z-10 pointer-events-none pb-20">
+            <img 
+                src="./images/이기영-빛의성자.png" 
+                alt="이기영 빛의 성자" 
+                className="h-[85%] max-h-[800px] object-contain object-bottom drop-shadow-[0_0_20px_rgba(242,202,80,0.15)]"
+                onError={handleImageError} 
+            />
+        </div>
+        {/* --- 메인 화면 중앙 캐릭터 이미지 끝 --- */}
+
         <div className="absolute left-4 top-4 flex flex-col gap-4 w-48 z-20">
             <div className="bg-[#2a2a2a]/90 backdrop-blur p-3 rounded-lg border-l-2 border-[#f2ca50] shadow-md">
                 <div className="flex justify-between items-end mb-1">
