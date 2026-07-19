@@ -80,7 +80,7 @@ const CHARACTER_DIALOGUES = {
         { reply: "고맙다.", nextText: "\"하하, 형님 건강은 이 덕구가 책임지는 거 아니겠수!\"" },
         { reply: "너나 훈련 열심히 해.", nextText: "\"크흑! 뼈 때리는 말씀! 당장 연병장 열 바퀴 돌고 오겠수다!\"" }
       ]
-    }
+    },
     {
       text: "\"거...형님! 나는 언제나 형님을 믿고 있다는 거 아니겠소!\"",
       choices: [
@@ -520,21 +520,25 @@ const HomeView = () => {
 };
 
 const InterviewModal = ({ member, onClose }) => {
-    const [dialogue, setDialogue] = useState("");
+    const [scenario, setScenario] = useState(null);
+    const [finalResponse, setFinalResponse] = useState(null);
 
     useEffect(() => {
         if (member) {
             const lines = CHARACTER_DIALOGUES[member.name] || CHARACTER_DIALOGUES["default"];
-            const randomLine = lines[Math.floor(Math.random() * lines.length)];
-            setDialogue(randomLine);
+            const randomScenario = lines[Math.floor(Math.random() * lines.length)];
+            setScenario(randomScenario);
+            setFinalResponse(null); // 모달이 열릴 때마다 초기화
         }
     }, [member]);
 
-    if (!member) return null;
+    if (!member || !scenario) return null;
 
     return (
         <div className="fixed inset-0 z-[110] bg-[#131313]/90 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-[#201f1f] border border-[#4d4635] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                
+                {/* 헤더 부분 */}
                 <div className="p-4 border-b border-[#353534] flex justify-between items-center bg-[#2a2a2a]">
                     <h3 className="text-[#f2ca50] text-lg font-bold flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">chat</span>
@@ -544,11 +548,14 @@ const InterviewModal = ({ member, onClose }) => {
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
+
+                {/* 대화창 부분 */}
                 <div className="p-6 flex flex-col items-center gap-6">
                     <div className="relative w-full">
-                        <div className="bg-[#2a2a2a] p-4 rounded-xl border border-[#4d4635] shadow-inner relative z-10">
-                            <p className="text-[#e5e2e1] text-center italic text-lg leading-relaxed">
-                                {dialogue}
+                        <div className="bg-[#2a2a2a] p-4 rounded-xl border border-[#4d4635] shadow-inner relative z-10 min-h-[100px] flex items-center justify-center">
+                            {/* 선택지를 눌렀다면 상대의 최종 대답을, 아니면 초기 질문을 보여줌 */}
+                            <p className={`text-center italic leading-relaxed ${finalResponse ? 'text-[#f2ca50]' : 'text-[#e5e2e1]'}`}>
+                                {finalResponse ? finalResponse : scenario.text}
                             </p>
                         </div>
                         <div className="chat-bubble-arrow border-t-[#2a2a2a]"></div>
@@ -558,11 +565,31 @@ const InterviewModal = ({ member, onClose }) => {
                         <img src={member.image} alt={member.name} className="w-full h-full object-cover" onError={handleImageError} />
                     </div>
                 </div>
-                <div className="p-4 bg-[#1c1b1b] border-t border-[#353534]">
-                    <button onClick={onClose} className="w-full py-3 bg-[#353534] text-[#d0c5af] rounded-lg hover:bg-[#4d4635] active:scale-95 transition-all">
-                        대화 종료
-                    </button>
+
+                {/* 유저 선택지 및 조작 버튼 부분 */}
+                <div className="p-4 bg-[#1c1b1b] border-t border-[#353534] flex flex-col gap-2">
+                    {!finalResponse ? (
+                        // 아직 대답을 선택하지 않았을 때: 선택지 버튼 출력
+                        scenario.choices.map((choice, idx) => (
+                            <button 
+                                key={idx} 
+                                onClick={() => setFinalResponse(choice.nextText)}
+                                className="w-full py-3 bg-[#2a2a2a] border border-[#4d4635] text-[#d0c5af] rounded-lg hover:bg-[#353534] hover:text-[#f2ca50] hover:border-[#f2ca50]/50 active:scale-95 transition-all text-sm"
+                            >
+                                {choice.reply}
+                            </button>
+                        ))
+                    ) : (
+                        // 대답을 완료했을 때: 면담 종료 버튼 출력
+                        <button 
+                            onClick={onClose} 
+                            className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-[0_4px_15px_rgba(242,202,80,0.3)]"
+                        >
+                            면담 종료
+                        </button>
+                    )}
                 </div>
+
             </div>
         </div>
     );
