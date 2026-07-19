@@ -19,7 +19,13 @@ const INITIAL_GAME_STATE = {
   quests: [
     { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
     { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
-    { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'C급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } }
+    { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'F급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } },
+    { id: 'q1', title: '고블린 소굴 토벌', desc: '외곽 지역에 출몰하는 고블린 무리를 소탕해야 합니다.', rank: 'D급', successRate: 95, rewards: { gold: 200, exp: 100, fame: 5 } },
+    { id: 'q2', title: '안개 숲 마수 토벌', desc: '숲을 장악한 거대한 마수들을 쫓아내고 평화를 되찾으세요.', rank: 'C급', successRate: 85, rewards: { gold: 500, exp: 200, fame: 10 } },
+    { id: 'q3', title: '대주교의 만찬회 참석', desc: '베니고어 교단 대주교의 만찬회에 참석하여 교류를 다집니다.', rank: 'B급', successRate: 90, rewards: { gold: 800, exp: 300, fame: 20 } },
+    { id: 'q4', title: '거울 던전 탐사', desc: '현실과 환상이 교차하는 거울 던전의 심연을 조사하십시오.', rank: 'A급', successRate: 75, rewards: { gold: 1500, exp: 500, fame: 30 } },
+    { id: 'q5', title: '악마 소환사 추적', desc: '금지된 흑마법으로 악마를 부리는 이단자를 처단해야 합니다.', rank: 'S급', successRate: 60, rewards: { gold: 3000, exp: 1000, fame: 50 } },
+    { id: 'q6', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
   ],
   activeQuests: [], 
   inventory: [] // 창고 인벤토리 초기화
@@ -983,80 +989,88 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
     );
 };
 
-const QuestResultView = ({ result, onClose }) => {
-    if(!result) return null;
-    const { success, quest, members } = result;
+const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQuest }) => {
+    const [selectedQuest, setSelectedQuest] = useState(null);
+
+    // 💡 핵심 로직: 현재 진행 중인(activeQuests에 있는) 퀘스트는 목록에서 제외합니다.
+    const availableQuests = quests.filter(quest => 
+        !activeQuests.some(aq => aq.quest.id === quest.id)
+    );
 
     return (
-        <div className="absolute inset-0 z-[120] bg-[#131313] flex flex-col items-center justify-center px-4 custom-scroll overflow-y-auto pb-24">
-            <div className="w-full max-w-md bg-[#1c1b1b] border-2 border-[#f2ca50]/30 rounded-xl p-6 parchment-gradient relative shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-                <div className="text-center mb-6">
-                    <div className="inline-block px-8 py-2 relative mb-2">
-                        <div className={`absolute inset-0 blur-xl rounded-full ${success ? 'bg-[#f2ca50]/20' : 'bg-[#ffb4ab]/20'}`}></div>
-                        <h2 className={`text-4xl relative z-10 ${success ? 'text-[#f2ca50] text-shadow-gold' : 'text-[#ffb4ab]'}`}>
-                            {success ? '퀘스트 완료!' : '퀘스트 실패...'}
-                        </h2>
-                    </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4 justify-center mb-8">
-                    {members.map(m => (
-                         <div key={m.id} className="flex flex-col items-center gap-2">
-                            <div className="w-20 h-20 rounded-xl border-2 border-[#d4af37] bg-[#353534] relative shadow-lg">
-                                <img src={m.image} alt={m.name} className={`w-full h-full object-cover rounded-lg ${!success ? 'grayscale' : ''}`} onError={handleImageError} />
-                                <div className="absolute -top-3 -right-3 bg-[#ffb4ab] text-[#690005] rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold border border-[#93000a] shadow-sm animate-bounce">
-                                    -20
-                                </div>
-                            </div>
-                            <p className="text-[#e5e2e1] text-sm font-bold">{m.name}</p>
-                        </div>
+        <div className="w-full h-full px-4 pb-8 space-y-4">
+            {activeQuests.length > 0 && (
+                <div className="mb-6 space-y-3">
+                    <h3 className="text-sm text-[#bdc2ff] font-bold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">hourglass_empty</span>
+                        현재 진행 중인 임무
+                    </h3>
+                    {activeQuests.map(aq => (
+                        <ActiveQuestCard key={aq.id} activeQuest={aq} onComplete={() => onCompleteQuest(aq)} />
                     ))}
+                    <div className="border-b-2 border-dashed border-[#4d4635] pt-2 mb-4"></div>
                 </div>
-                <p className="text-center text-[#d0c5af] text-xs mb-6">참가자 정신력 20 감소</p>
+            )}
 
-                <div className="space-y-4 mb-8">
-                    <h3 className="text-sm text-[#f2ca50] border-b border-[#f2ca50]/20 pb-1 text-center tracking-widest">결과 확인</h3>
-                    {success ? (
-                        <div className="grid grid-cols-3 gap-2">
-                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
-                                <div className="w-8 h-8 rounded bg-[#f2ca50]/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[#f2ca50] fill text-xl">payments</span>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] text-[#d0c5af]">GOLD</p>
-                                    <p className="text-[#f2ca50] text-sm font-bold">+{quest.rewards.gold}</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
-                                <div className="w-8 h-8 rounded bg-[#4ade80]/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[#4ade80] fill text-xl">star</span>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] text-[#d0c5af]">EXP</p>
-                                    <p className="text-[#4ade80] text-sm font-bold">+{quest.rewards.exp}</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
-                                <div className="w-8 h-8 rounded bg-[#bdc2ff]/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[#bdc2ff] fill text-xl">military_tech</span>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] text-[#d0c5af]">FAME</p>
-                                    <p className="text-[#bdc2ff] text-sm font-bold">+{quest.rewards.fame}</p>
-                                </div>
+            <h3 className="text-sm text-[#d0c5af] font-bold">수행 가능한 임무</h3>
+            
+            {/* 필터링된 availableQuests만 화면에 그려줍니다 */}
+            {availableQuests.length === 0 ? (
+                 <div className="text-center text-[#d0c5af] p-8 bg-[#2a2a2a] rounded-xl border border-[#4d4635]">
+                     모든 임무가 진행 중입니다. 조금 기다려주세요!
+                 </div>
+            ) : (
+                availableQuests.map(quest => (
+                    <div key={quest.id} className="bg-[#1c1b1b] border border-[#f2ca50]/30 rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#f2ca50]/60">
+                        <div className="relative h-24 w-full bg-[#2a2a2a]">
+                            <div className={`absolute top-3 left-3 text-[#131313] px-3 py-1 rounded-lg font-bold shadow-sm ${quest.rank.includes('S') ? 'bg-[#ffb4ab]' : quest.rank.includes('A') ? 'bg-[#bdc2ff]' : 'bg-[#f2ca50]'}`}>
+                                {quest.rank}
                             </div>
                         </div>
-                    ) : (
-                        <div className="text-center text-[#d0c5af] p-4 bg-[#2a2a2a] rounded-lg border border-[#4d4635]">
-                            임무 수행 중 예상치 못한 어려움을 겪어 실패했습니다. 보상을 얻지 못했습니다.
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <h3 className={`text-xl font-bold ${quest.rank.includes('S') ? 'text-[#ffb4ab]' : 'text-[#f2ca50]'}`}>{quest.title}</h3>
+                                <p className="text-sm text-[#d0c5af] mt-1">{quest.desc}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-xs text-[#d0c5af]">
+                                    <span>기본 성공률</span>
+                                    <span className="text-[#f2ca50]">{quest.successRate}%</span>
+                                </div>
+                                <div className="h-1.5 w-full bg-[#353534] rounded-full overflow-hidden">
+                                    <div className="h-full bg-[#f2ca50]" style={{ width: `${quest.successRate}%` }}></div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
+                                <div className="flex items-center gap-1 text-[#f2ca50]">
+                                    <span className="material-symbols-outlined text-sm fill">payments</span>
+                                    <span className="text-sm font-bold">{quest.rewards.gold}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[#4ade80]">
+                                    <span className="material-symbols-outlined text-sm fill">star</span>
+                                    <span className="text-sm font-bold">{quest.rewards.exp}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[#bdc2ff]">
+                                    <span className="material-symbols-outlined text-sm fill">military_tech</span>
+                                    <span className="text-sm font-bold">{quest.rewards.fame}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedQuest(quest)} className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-transform hover:brightness-110">
+                                임무 인원 배치
+                            </button>
                         </div>
-                    )}
-                </div>
-
-                <button onClick={onClose} className="w-full py-4 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-all text-xl shadow-lg border-b-4 border-[#d4af37]">
-                    수고하셨습니다
-                </button>
-            </div>
+                    </div>
+                ))
+            )}
+            
+            {selectedQuest && (
+                <SelectMemberModal 
+                    quest={selectedQuest} 
+                    members={members} 
+                    onConfirm={(q, m) => { setSelectedQuest(null); onStartQuest(q, m); }} 
+                    onClose={() => setSelectedQuest(null)} 
+                />
+            )}
         </div>
     );
 };
@@ -1312,6 +1326,7 @@ export default function App() {
   const [tempResult, setTempResult] = useState(null);
   const [interviewMember, setInterviewMember] = useState(null);
 
+  // App 컴포넌트 안쪽에 있는 첫 번째 useEffect를 아래 코드로 교체해주세요.
   useEffect(() => {
     try {
       const saved = localStorage.getItem('paranGuildState');
@@ -1320,13 +1335,17 @@ export default function App() {
           if(parsed && parsed.guild) {
               parsed.guild.exp = parsed.guild.exp || 0;
               parsed.activeQuests = parsed.activeQuests || [];
-              parsed.inventory = parsed.inventory || []; // 인벤토리 호환성 보장
+              parsed.inventory = parsed.inventory || [];
               parsed.members = parsed.members.map(m => ({
                   ...m,
                   level: m.level || 1,
                   maxLevel: m.maxLevel || 20,
                   status: m.status || 'active'
               }));
+              
+              // 💡 핵심 추가: 세이브 데이터를 불러오더라도 퀘스트 목록은 항상 최신(초기화된 상태)으로 유지합니다.
+              parsed.quests = INITIAL_GAME_STATE.quests; 
+              
               setGameState(parsed); 
           }
       }
