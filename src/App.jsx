@@ -257,7 +257,24 @@ const TopBar = ({ guild, titleOverride = null }) => (
           </>
       )}
     </div>
+    
+    {/* 우측 상단 메뉴 영역 */}
     <div className="flex items-center gap-4">
+       {/* 1. 새로 추가된 알림, 메시지, 설정 아이콘 시작 */}
+       <div className="flex items-center gap-3">
+         <button className="flex items-center justify-center text-[#d0c5af] hover:text-[#f2ca50] transition-colors active:scale-95" aria-label="알림">
+           <span className="material-symbols-outlined">notifications</span>
+         </button>
+         <button className="flex items-center justify-center text-[#d0c5af] hover:text-[#f2ca50] transition-colors active:scale-95" aria-label="메시지">
+           <span className="material-symbols-outlined">mail</span>
+         </button>
+         <button className="flex items-center justify-center text-[#d0c5af] hover:text-[#f2ca50] transition-colors active:scale-95" aria-label="설정">
+           <span className="material-symbols-outlined">settings</span>
+         </button>
+       </div>
+       {/* 새로 추가된 알림, 메시지, 설정 아이콘 끝 */}
+
+       {/* 2. 기존 골드 표시 */}
        <div className="flex items-center bg-[#353534] px-3 py-1 rounded-full border border-[#4d4635] gap-2">
         <span className="material-symbols-outlined text-[#f2ca50] text-sm fill">monetization_on</span>
         <span className="text-[#f2ca50] text-sm">{guild.gold}G</span>
