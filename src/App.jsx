@@ -8,7 +8,7 @@ const INITIAL_GAME_STATE = {
     gold: 5000,
     support: 42,
     fame: 8,
-    exp: 0, // 길드 공용 경험치 추가
+    exp: 0, 
   },
   members: [
     { id: 'm1', name: '이기영', rank: '일반', role: '연금술사', sanity: 85, image: './images/이기영-연금술사.png', status: 'active', level: 1, maxLevel: 20 },
@@ -21,14 +21,15 @@ const INITIAL_GAME_STATE = {
     { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
     { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'C급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } }
   ],
+  activeQuests: [], // 진행 중인 퀘스트 목록
   inventory: []
 };
 
 const GACHA_POOL = [
-    { name: '진청', rank: 'SS랭크', role: '마도사', image: './images/진청-마도사_3.png', level: 1, maxLevel: 20 },
-    { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png', level: 1, maxLevel: 20 },
-    { name: '선희영', rank: 'SS랭크', role: '사제', image: './images/선희영-사제_3.png', level: 1, maxLevel: 20 },
-    { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png', level: 1, maxLevel: 20 },
+    { name: '진청', rank: 'SS랭크', role: '마도사', image: './images/진청-마도사_3.png' },
+    { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png' },
+    { name: '선희영', rank: 'SS랭크', role: '사제', image: './images/선희영-사제_3.png' },
+    { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png' },
 ];
 const GENERIC_NAMES = ["행인1", "모험가A", "용병B", "마법학도", "초보도적", "마을주민", "떠돌이", "신입창병", "견습사제", "은퇴한기사"];
 
@@ -245,7 +246,6 @@ const TopBar = ({ guild, titleOverride = null }) => (
     </div>
     
     <div className="flex items-center gap-4">
-       {/* 상단 알림, 메시지, 설정 아이콘 */}
        <div className="flex items-center gap-3">
          <button className="flex items-center justify-center text-[#d0c5af] hover:text-[#f2ca50] transition-colors active:scale-95" aria-label="알림">
            <span className="material-symbols-outlined">notifications</span>
@@ -258,7 +258,6 @@ const TopBar = ({ guild, titleOverride = null }) => (
          </button>
        </div>
 
-       {/* 골드 및 경험치 표시 */}
        <div className="flex items-center bg-[#353534] px-3 py-1 rounded-full border border-[#4d4635] gap-2">
         <span className="material-symbols-outlined text-[#f2ca50] text-sm fill">monetization_on</span>
         <span className="text-[#f2ca50] text-sm mr-1">{guild.gold}G</span>
@@ -408,12 +407,18 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
           const reqExp = member.level * 50;
           const isMaxLevel = member.level >= member.maxLevel;
           const canLevelUp = guildExp >= reqExp;
+          const isLocked = member.status === 'locked';
+          const isQuesting = member.status === 'questing';
+          
+          let cardStyle = 'border-[#4d4635]';
+          if (isLocked) cardStyle = 'border-[#ffb4ab]/30 opacity-90';
+          if (isQuesting) cardStyle = 'border-[#bdc2ff]/30 opacity-80';
 
           return (
-            <div key={member.id} className={`parchment-gradient p-4 rounded-lg border shadow-lg flex flex-col gap-3 transition-transform active:scale-[0.98] ${member.status === 'locked' ? 'border-[#ffb4ab]/30 opacity-90' : 'border-[#4d4635]'}`}>
+            <div key={member.id} className={`parchment-gradient p-4 rounded-lg border shadow-lg flex flex-col gap-3 transition-transform active:scale-[0.98] ${cardStyle}`}>
               <div className="flex gap-4">
-                <div className={`w-20 h-20 rounded-md overflow-hidden border flex-shrink-0 bg-[#131313] ${member.status === 'locked' ? 'border-[#f2ca50] shadow-[0_0_10px_rgba(242,202,80,0.3)]' : 'border-[#e9c349] shadow-[inset_0_0_4px_rgba(233,195,73,0.3)]'}`}>
-                  <img alt={member.name} className={`w-full h-full object-cover ${member.status === 'locked' ? 'grayscale-[0.5]' : ''}`} src={member.image} onError={handleImageError} />
+                <div className={`w-20 h-20 rounded-md overflow-hidden border flex-shrink-0 bg-[#131313] ${isLocked ? 'border-[#f2ca50] shadow-[0_0_10px_rgba(242,202,80,0.3)]' : 'border-[#e9c349] shadow-[inset_0_0_4px_rgba(233,195,73,0.3)]'}`}>
+                  <img alt={member.name} className={`w-full h-full object-cover ${isLocked ? 'grayscale-[0.5]' : ''}`} src={member.image} onError={handleImageError} />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
@@ -425,7 +430,8 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
                       </div>
                       <div className="flex flex-col items-end gap-1">
                          <span className={`text-xs px-2 py-0.5 rounded ${member.rank.includes('S') ? 'bg-[#d4af37]/20 text-[#f2ca50] border border-[#f2ca50]/30' : member.rank.includes('A') ? 'bg-[#343d96]/50 text-[#bdc2ff]' : 'bg-[#353534] text-[#d0c5af]'}`}>{member.rank}</span>
-                         {member.status === 'locked' && <span className="text-[10px] text-[#d0c5af] opacity-50 tracking-widest">[잠금됨]</span>}
+                         {isLocked && <span className="text-[10px] text-[#d0c5af] opacity-50 tracking-widest">[잠금됨]</span>}
+                         {isQuesting && <span className="text-[10px] text-[#bdc2ff] tracking-widest font-bold">[임무 중]</span>}
                       </div>
                     </div>
                     <p className="text-[#99907c] text-sm">{member.role}</p>
@@ -437,10 +443,10 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
                     <div className="h-2 w-full bg-[#131313] rounded-full overflow-hidden">
                       <div className={`h-full ${member.sanity < 30 ? 'bg-[#ffb4ab]/60' : 'sanity-bar-fill'}`} style={{ width: `${member.sanity}%` }}></div>
                     </div>
-                    {member.status === 'locked' && (
+                    {isLocked && (
                         <div className="flex items-center gap-1 text-[#ffb4ab] text-[10px] mt-1">
                           <span className="material-symbols-outlined text-xs">error</span>
-                          <span>퀘스트 불가</span>
+                          <span>퀘스트 불가 (정신력 0)</span>
                         </div>
                     )}
                   </div>
@@ -456,25 +462,24 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
                     <span className="material-symbols-outlined text-lg">chat</span>
                     <span className="text-[10px]">면담</span>
                  </button>
-                 <button onClick={() => onHealMember(member.id)} disabled={member.status === 'locked' || member.sanity >= 100} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                 <button onClick={() => onHealMember(member.id)} disabled={isLocked || isQuesting || member.sanity >= 100} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                     <span className="material-symbols-outlined text-lg">medication</span>
                     <span className="text-[10px]">포션</span>
                  </button>
 
-                 {/* 레벨업 및 한계돌파 버튼 */}
                  {isMaxLevel ? (
-                     <button onClick={() => onLimitBreak(member.id)} disabled={member.status === 'locked'} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#ffb4ab] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                     <button onClick={() => onLimitBreak(member.id)} disabled={isLocked || isQuesting} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#ffb4ab] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                         <span className="material-symbols-outlined text-lg">local_fire_department</span>
                         <span className="text-[10px]">돌파(1000G)</span>
                      </button>
                  ) : (
-                     <button onClick={() => onLevelUp(member.id)} disabled={member.status === 'locked' || !canLevelUp} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#4ade80] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                     <button onClick={() => onLevelUp(member.id)} disabled={isLocked || isQuesting || !canLevelUp} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#4ade80] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                         <span className="material-symbols-outlined text-lg">upgrade</span>
                         <span className="text-[10px]">LV UP({reqExp}E)</span>
                      </button>
                  )}
 
-                 <button disabled={member.status === 'locked' || member.sanity === 0} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                 <button disabled={isLocked || isQuesting || member.sanity === 0} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                     <span className="material-symbols-outlined text-lg">assignment</span>
                     <span className="text-[10px]">퀘스트</span>
                  </button>
@@ -512,9 +517,10 @@ const GachaView = ({ onSelectComplete }) => {
 
     useEffect(() => {
         const newPulls = [];
-        newPulls.push({...GACHA_POOL[0], id: createId('g_spec')});
-        newPulls.push({...GACHA_POOL[1], id: createId('g_spec')});
-        newPulls.push({...GACHA_POOL[2], id: createId('g_spec')});
+        // 미리 지정된 캐릭터들도 레벨 스탯을 명시적으로 추가하여 오류 방지
+        newPulls.push({...GACHA_POOL[0], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
+        newPulls.push({...GACHA_POOL[1], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
+        newPulls.push({...GACHA_POOL[2], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
         
         for(let i=3; i<10; i++) {
             const rank = ['C', 'D', 'E', 'F'][Math.floor(Math.random() * 4)];
@@ -593,48 +599,152 @@ const GachaView = ({ onSelectComplete }) => {
     );
 };
 
+// --- 임무 수행자 다중 선택 모달 ---
 const SelectMemberModal = ({ quest, members, onConfirm, onClose }) => {
+    // S급, A급 퀘스트는 2명 필요, 그 외는 1명
+    const reqCount = quest.rank.includes('S') || quest.rank.includes('A') ? 2 : 1;
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    // 현재 활동 가능하며 퀘스트 중이 아니고 정신력이 있는 길드원만 필터링
     const activeMembers = members.filter(m => m.status === 'active' && m.sanity > 0);
     
+    const toggleSelect = (id) => {
+        if(selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selId => selId !== id));
+        } else if (selectedIds.length < reqCount) {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-[110] bg-[#131313]/90 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-[#201f1f] border border-[#4d4635] rounded-xl shadow-2xl p-4 animate-in fade-in zoom-in duration-200">
-                <h3 className="text-[#f2ca50] text-xl mb-4 border-b border-[#353534] pb-2 text-center">임무 수행자 선택</h3>
-                <p className="text-[#e5e2e1] text-sm mb-4 text-center">[{quest.title}] 임무를 수행할 길드원을 선택하세요.</p>
+                <h3 className="text-[#f2ca50] text-xl mb-4 border-b border-[#353534] pb-2 text-center">임무 수행자 배치</h3>
+                <p className="text-[#e5e2e1] text-sm mb-4 text-center">
+                    [{quest.title}]<br/>
+                    <span className="text-[#f2ca50] font-bold text-xs">최소 {reqCount}명의 길드원이 필요합니다. ({selectedIds.length}/{reqCount})</span>
+                </p>
+                
                 <div className="space-y-2 max-h-64 overflow-y-auto custom-scroll pr-2 mb-4">
-                    {activeMembers.map(m => (
-                        <button 
-                            key={m.id} 
-                            onClick={() => onConfirm(quest, m)}
-                            className="w-full flex items-center justify-between p-3 bg-[#2a2a2a] border border-[#4d4635] rounded-lg hover:border-[#f2ca50] active:scale-95 transition-all group"
-                        >
-                            <div className="flex items-center gap-3">
-                                <img src={m.image} alt={m.name} className="w-10 h-10 rounded-full border border-[#f2ca50] object-cover group-hover:scale-110 transition-transform" onError={handleImageError} />
-                                <div className="text-left">
-                                    <div className="text-[#e5e2e1] font-bold">{m.name}</div>
-                                    <div className="text-xs text-[#d0c5af]">정신력: {m.sanity}%</div>
+                    {activeMembers.map(m => {
+                        const isSelected = selectedIds.includes(m.id);
+                        return (
+                            <button 
+                                key={m.id} 
+                                onClick={() => toggleSelect(m.id)}
+                                className={`w-full flex items-center justify-between p-3 border rounded-lg active:scale-95 transition-all group ${isSelected ? 'bg-[#f2ca50]/20 border-[#f2ca50]' : 'bg-[#2a2a2a] border-[#4d4635] hover:border-[#f2ca50]/50'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        <img src={m.image} alt={m.name} className={`w-10 h-10 rounded-full border object-cover ${isSelected ? 'border-[#f2ca50]' : 'border-[#4d4635]'}`} onError={handleImageError} />
+                                        {isSelected && <div className="absolute -top-1 -right-1 bg-[#f2ca50] rounded-full w-4 h-4 flex items-center justify-center text-[#131313]"><span className="material-symbols-outlined text-[10px] font-bold">check</span></div>}
+                                    </div>
+                                    <div className="text-left">
+                                        <div className={`font-bold ${isSelected ? 'text-[#f2ca50]' : 'text-[#e5e2e1]'}`}>{m.name}</div>
+                                        <div className="text-xs text-[#d0c5af]">정신력: {m.sanity}% / LV.{m.level}</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <span className="text-xs px-2 py-1 bg-[#353534] rounded text-[#d0c5af] group-hover:bg-[#f2ca50] group-hover:text-[#3c2f00] transition-colors">{m.rank}</span>
-                        </button>
-                    ))}
+                                <span className="text-xs px-2 py-1 bg-[#353534] rounded text-[#d0c5af]">{m.rank}</span>
+                            </button>
+                        );
+                    })}
                     {activeMembers.length === 0 && (
-                        <div className="text-center text-[#ffb4ab] py-4">수행 가능한 길드원이 없습니다. 포션을 사용해 정신력을 회복하세요.</div>
+                        <div className="text-center text-[#ffb4ab] py-4">배치할 수 있는 길드원이 없습니다.<br/>포션을 사용해 회복하거나 모집하세요.</div>
                     )}
                 </div>
-                <button onClick={onClose} className="w-full py-3 bg-[#353534] text-[#d0c5af] rounded-lg hover:bg-[#4d4635] active:scale-95 transition-all">
-                    취소
-                </button>
+
+                <div className="flex gap-2">
+                    <button onClick={onClose} className="flex-1 py-3 bg-[#353534] text-[#d0c5af] rounded-lg hover:bg-[#4d4635] active:scale-95 transition-all">취소</button>
+                    <button 
+                        disabled={selectedIds.length < reqCount} 
+                        onClick={() => {
+                            const selectedMembers = activeMembers.filter(m => selectedIds.includes(m.id));
+                            onConfirm(quest, selectedMembers);
+                        }} 
+                        className="flex-1 py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all disabled:opacity-30 disabled:bg-[#353534] disabled:text-[#99907c]"
+                    >
+                        출발하기
+                    </button>
+                </div>
             </div>
         </div>
     );
 };
 
-const QuestsView = ({ quests, members, onStartQuest }) => {
+// --- 타이머가 적용된 진행 중인 퀘스트 카드 ---
+const ActiveQuestCard = ({ activeQuest, onComplete }) => {
+    const [timeLeft, setTimeLeft] = useState(Math.max(0, activeQuest.endTime - Date.now()));
+
+    useEffect(() => {
+        if (timeLeft <= 0) return;
+        const timer = setInterval(() => {
+            setTimeLeft(Math.max(0, activeQuest.endTime - Date.now()));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [activeQuest.endTime, timeLeft]);
+
+    const isDone = timeLeft <= 0;
+
+    return (
+        <div className="bg-[#2a2a2a] border border-[#bdc2ff]/50 rounded-xl p-4 shadow-lg relative overflow-hidden">
+            {/* 진행률 바 애니메이션 효과 */}
+            {!isDone && <div className="absolute bottom-0 left-0 h-1 bg-[#bdc2ff] opacity-50 animate-pulse" style={{ width: '100%' }}></div>}
+            
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <div className="text-xs text-[#bdc2ff] mb-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[14px]">swords</span>
+                        임무 진행 중...
+                    </div>
+                    <h4 className="text-lg text-[#e5e2e1] font-bold">{activeQuest.quest.title}</h4>
+                </div>
+                <div className="text-right">
+                    {isDone ? (
+                        <span className="text-[#4ade80] font-bold animate-pulse flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span>완료!
+                        </span>
+                    ) : (
+                        <span className="text-[#f2ca50] font-bold font-mono">{Math.ceil(timeLeft / 1000)}초 남음</span>
+                    )}
+                </div>
+            </div>
+            
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#4d4635]">
+                <div className="flex -space-x-3">
+                    {activeQuest.members.map(m => (
+                        <img key={m.id} src={m.image} alt={m.name} className="w-8 h-8 rounded-full border-2 border-[#131313] object-cover bg-[#353534]" onError={handleImageError} />
+                    ))}
+                </div>
+                {isDone && (
+                    <button onClick={onComplete} className="px-4 py-2 bg-[#bdc2ff] text-[#131313] text-sm font-bold rounded-lg active:scale-95 transition-transform shadow-[0_0_10px_rgba(189,194,255,0.4)]">
+                        결과 확인하기
+                    </button>
+                )}
+            </div>
+        </div>
+    )
+};
+
+const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQuest }) => {
     const [selectedQuest, setSelectedQuest] = useState(null);
 
     return (
         <div className="w-full h-full px-4 pb-8 space-y-4">
+            {/* 진행 중인 퀘스트 리스트 표시 영역 */}
+            {activeQuests.length > 0 && (
+                <div className="mb-6 space-y-3">
+                    <h3 className="text-sm text-[#bdc2ff] font-bold flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">hourglass_empty</span>
+                        현재 진행 중인 임무
+                    </h3>
+                    {activeQuests.map(aq => (
+                        <ActiveQuestCard key={aq.id} activeQuest={aq} onComplete={() => onCompleteQuest(aq)} />
+                    ))}
+                    <div className="border-b-2 border-dashed border-[#4d4635] pt-2 mb-4"></div>
+                </div>
+            )}
+
+            <h3 className="text-sm text-[#d0c5af] font-bold">수행 가능한 임무</h3>
             {quests.map(quest => (
                 <div key={quest.id} className="bg-[#1c1b1b] border border-[#f2ca50]/30 rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#f2ca50]/60">
                     <div className="relative h-24 w-full bg-[#2a2a2a]">
@@ -667,26 +777,33 @@ const QuestsView = ({ quests, members, onStartQuest }) => {
                             </div>
                         </div>
                         <button onClick={() => setSelectedQuest(quest)} className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-transform hover:brightness-110">
-                            임무 수락
+                            임무 인원 배치
                         </button>
                     </div>
                 </div>
             ))}
+            
             {selectedQuest && (
-                <SelectMemberModal quest={selectedQuest} members={members} onConfirm={(q, m) => { setSelectedQuest(null); onStartQuest(q, m); }} onClose={() => setSelectedQuest(null)} />
+                <SelectMemberModal 
+                    quest={selectedQuest} 
+                    members={members} 
+                    onConfirm={(q, m) => { setSelectedQuest(null); onStartQuest(q, m); }} 
+                    onClose={() => setSelectedQuest(null)} 
+                />
             )}
         </div>
     );
 };
 
+// 다중 인원을 지원하도록 퀘스트 결과창 수정
 const QuestResultView = ({ result, onClose }) => {
     if(!result) return null;
-    const { success, quest, member } = result;
+    const { success, quest, members } = result;
 
     return (
         <div className="absolute inset-0 z-[120] bg-[#131313] flex flex-col items-center justify-center px-4 custom-scroll overflow-y-auto pb-24">
             <div className="w-full max-w-md bg-[#1c1b1b] border-2 border-[#f2ca50]/30 rounded-xl p-6 parchment-gradient relative shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                     <div className="inline-block px-8 py-2 relative mb-2">
                         <div className={`absolute inset-0 blur-xl rounded-full ${success ? 'bg-[#f2ca50]/20' : 'bg-[#ffb4ab]/20'}`}></div>
                         <h2 className={`text-4xl relative z-10 ${success ? 'text-[#f2ca50] text-shadow-gold' : 'text-[#ffb4ab]'}`}>
@@ -695,16 +812,20 @@ const QuestResultView = ({ result, onClose }) => {
                     </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-2 mb-8">
-                    <div className="w-24 h-24 rounded-xl border-2 border-[#d4af37] bg-[#353534] relative shadow-lg">
-                        <img src={member.image} alt={member.name} className={`w-full h-full object-cover rounded-lg ${!success ? 'grayscale' : ''}`} onError={handleImageError} />
-                        <div className="absolute -top-3 -right-3 bg-[#ffb4ab] text-[#690005] rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold border border-[#93000a] shadow-sm animate-bounce">
-                            -20
+                <div className="flex flex-wrap gap-4 justify-center mb-8">
+                    {members.map(m => (
+                         <div key={m.id} className="flex flex-col items-center gap-2">
+                            <div className="w-20 h-20 rounded-xl border-2 border-[#d4af37] bg-[#353534] relative shadow-lg">
+                                <img src={m.image} alt={m.name} className={`w-full h-full object-cover rounded-lg ${!success ? 'grayscale' : ''}`} onError={handleImageError} />
+                                <div className="absolute -top-3 -right-3 bg-[#ffb4ab] text-[#690005] rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold border border-[#93000a] shadow-sm animate-bounce">
+                                    -20
+                                </div>
+                            </div>
+                            <p className="text-[#e5e2e1] text-sm font-bold">{m.name}</p>
                         </div>
-                    </div>
-                    <p className="text-[#e5e2e1] text-lg font-bold">{member.name}</p>
-                    <p className="text-[#d0c5af] text-sm">정신력 20 감소</p>
+                    ))}
                 </div>
+                <p className="text-center text-[#d0c5af] text-xs mb-6">참가자 정신력 20 감소</p>
 
                 <div className="space-y-4 mb-8">
                     <h3 className="text-sm text-[#f2ca50] border-b border-[#f2ca50]/20 pb-1 text-center tracking-widest">결과 확인</h3>
@@ -746,7 +867,7 @@ const QuestResultView = ({ result, onClose }) => {
                 </div>
 
                 <button onClick={onClose} className="w-full py-4 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-all text-xl shadow-lg border-b-4 border-[#d4af37]">
-                    확인
+                    수고하셨습니다
                 </button>
             </div>
         </div>
@@ -975,12 +1096,13 @@ export default function App() {
       if (saved) {
           const parsed = JSON.parse(saved);
           if(parsed && parsed.guild) {
-              // 기존 저장 데이터에 새로운 속성(exp, level 등)이 없을 경우를 대비한 안전 장치
               parsed.guild.exp = parsed.guild.exp || 0;
+              parsed.activeQuests = parsed.activeQuests || []; // 기존 데이터 충돌 방지
               parsed.members = parsed.members.map(m => ({
                   ...m,
                   level: m.level || 1,
-                  maxLevel: m.maxLevel || 20
+                  maxLevel: m.maxLevel || 20,
+                  status: m.status || 'active'
               }));
               setGameState(parsed); 
           }
@@ -1006,7 +1128,6 @@ export default function App() {
       }));
   };
 
-  // 레벨업 처리 로직
   const handleLevelUp = (memberId) => {
     setGameState(prev => {
       const member = prev.members.find(m => m.id === memberId);
@@ -1022,7 +1143,6 @@ export default function App() {
     });
   };
 
-  // 한계돌파 처리 로직
   const handleLimitBreak = (memberId) => {
     setGameState(prev => {
       const member = prev.members.find(m => m.id === memberId);
@@ -1032,17 +1152,8 @@ export default function App() {
         return prev;
       }
 
-      // 캐릭터별 한계돌파 확률 설정
-      const rates = {
-        "김현성": 70,
-        "정하얀": 30,
-        "박덕구": 50,
-        "진청": 40,
-        "차희라": 90,
-        "선희영": 30
-      };
-      
-      const successRate = rates[member.name] || 50; // 목록에 없는 경우 기본 50%
+      const rates = { "김현성": 70, "정하얀": 30, "박덕구": 50, "진청": 40, "차희라": 90, "선희영": 30 };
+      const successRate = rates[member.name] || 50; 
       const isSuccess = Math.random() * 100 <= successRate;
 
       if (isSuccess) {
@@ -1063,27 +1174,66 @@ export default function App() {
     });
   };
 
-  const handleStartQuest = (quest, member) => {
-      const actualRate = quest.successRate * (member.sanity / 100);
-      const isSuccess = Math.random() * 100 <= actualRate;
-      const newSanity = Math.max(0, member.sanity - 20);
+  // 1. 임무 출발 처리 (다인 배치, 시간 설정, 상태 변경)
+  const handleDispatchQuest = (quest, selectedMembers) => {
+      // 랭크별 시간 세팅: S급(20초), A급(15초), 기타(10초)
+      const duration = quest.rank.includes('S') ? 20 : quest.rank.includes('A') ? 15 : 10;
+      
+      const newActiveQuest = {
+          id: createId('aq'),
+          quest,
+          members: selectedMembers,
+          endTime: Date.now() + (duration * 1000)
+      };
 
-      setTempResult({ success: isSuccess, quest, member });
+      const selectedMemberIds = selectedMembers.map(m => m.id);
+
+      setGameState(prev => ({
+          ...prev,
+          activeQuests: [...(prev.activeQuests || []), newActiveQuest],
+          // 파견된 멤버의 상태를 'questing'으로 변경하여 중복 출전 방지
+          members: prev.members.map(m => 
+              selectedMemberIds.includes(m.id) ? { ...m, status: 'questing' } : m
+          )
+      }));
+  };
+
+  // 2. 시간이 다 된 임무 완료 처리 및 보상 획득
+  const handleCompleteQuest = (activeQuest) => {
+      // 퀘스트 참가자 평균 정신력을 기준으로 성공률 계산
+      const avgSanity = activeQuest.members.reduce((acc, m) => acc + m.sanity, 0) / activeQuest.members.length;
+      const actualRate = activeQuest.quest.successRate * (avgSanity / 100);
+      const isSuccess = Math.random() * 100 <= actualRate;
+      
+      const memberIds = activeQuest.members.map(m => m.id);
+
+      setTempResult({ success: isSuccess, quest: activeQuest.quest, members: activeQuest.members });
       
       setGameState(prev => {
           let newGold = prev.guild.gold;
           let newFame = prev.guild.fame;
-          let newExp = prev.guild.exp || 0; // 경험치 반영 추가
+          let newExp = prev.guild.exp || 0; 
+          
           if(isSuccess) {
-              newGold += quest.rewards.gold;
-              newFame += quest.rewards.fame;
-              newExp += quest.rewards.exp;
+              newGold += activeQuest.quest.rewards.gold;
+              newFame += activeQuest.quest.rewards.fame;
+              newExp += activeQuest.quest.rewards.exp;
           }
+          
           return {
               ...prev,
               guild: { ...prev.guild, gold: newGold, fame: newFame, exp: newExp },
-              members: prev.members.map(m => m.id === member.id ? {...m, sanity: newSanity} : m)
-          }
+              // 완료된 퀘스트 삭제
+              activeQuests: prev.activeQuests.filter(aq => aq.id !== activeQuest.id),
+              // 참가 멤버 상태 복귀 및 정신력 감소
+              members: prev.members.map(m => {
+                  if (memberIds.includes(m.id)) {
+                      const newSanity = Math.max(0, m.sanity - 20);
+                      return { ...m, sanity: newSanity, status: newSanity === 0 ? 'locked' : 'active' };
+                  }
+                  return m;
+              })
+          };
       });
       setCurrentView('questResult');
   };
@@ -1125,7 +1275,13 @@ export default function App() {
                                     onLevelUp={handleLevelUp}
                                     onLimitBreak={handleLimitBreak}
                                  />;
-          case 'quests': return <QuestsView quests={gameState.quests} members={gameState.members} onStartQuest={handleStartQuest} />;
+          case 'quests': return <QuestsView 
+                                    quests={gameState.quests} 
+                                    members={gameState.members} 
+                                    activeQuests={gameState.activeQuests || []}
+                                    onStartQuest={handleDispatchQuest} 
+                                    onCompleteQuest={handleCompleteQuest}
+                                 />;
           case 'alchemy': return <AlchemyView onComplete={handleAlchemyComplete} />;
           default: return <div className="pt-24 text-center text-[#d0c5af] font-bold text-xl">창고 기능은 업데이트 준비 중입니다.</div>;
       }
