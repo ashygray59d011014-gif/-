@@ -8,12 +8,13 @@ const INITIAL_GAME_STATE = {
     gold: 5000,
     support: 42,
     fame: 8,
+    exp: 0, // 길드 공용 경험치 추가
   },
   members: [
-    { id: 'm1', name: '이기영', rank: '일반', role: '연금술사', sanity: 85, image: './images/이기영-연금술사.png', status: 'active' },
-    { id: 'm2', name: '정하얀', rank: 'S랭크', role: '마법사', sanity: 42, image: './images/정하얀-마법사_2.png', status: 'active' },
-    { id: 'm3', name: '김현성', rank: 'SS랭크', role: '검사', sanity: 0, image: './images/김현성.png', status: 'locked' },
-    { id: 'm4', name: '박덕구', rank: 'B랭크', role: '탱커', sanity: 98, image: './images/박덕구-탱커.png', status: 'active' }
+    { id: 'm1', name: '이기영', rank: '일반', role: '연금술사', sanity: 85, image: './images/이기영-연금술사.png', status: 'active', level: 1, maxLevel: 20 },
+    { id: 'm2', name: '정하얀', rank: 'S랭크', role: '마법사', sanity: 42, image: './images/정하얀-마법사_2.png', status: 'active', level: 1, maxLevel: 20 },
+    { id: 'm3', name: '김현성', rank: 'SS랭크', role: '검사', sanity: 0, image: './images/김현성.png', status: 'locked', level: 1, maxLevel: 20 },
+    { id: 'm4', name: '박덕구', rank: 'B랭크', role: '탱커', sanity: 98, image: './images/박덕구-탱커.png', status: 'active', level: 1, maxLevel: 20 }
   ],
   quests: [
     { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
@@ -24,10 +25,10 @@ const INITIAL_GAME_STATE = {
 };
 
 const GACHA_POOL = [
-    { name: '진청', rank: 'SS랭크', role: '마도사', image: './images/진청-마도사_3.png' },
-    { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png' },
-    { name: '선희영', rank: 'SS랭크', role: '사제', image: './images/선희영-사제_3.png' },
-    { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png' },
+    { name: '진청', rank: 'SS랭크', role: '마도사', image: './images/진청-마도사_3.png', level: 1, maxLevel: 20 },
+    { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png', level: 1, maxLevel: 20 },
+    { name: '선희영', rank: 'SS랭크', role: '사제', image: './images/선희영-사제_3.png', level: 1, maxLevel: 20 },
+    { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png', level: 1, maxLevel: 20 },
 ];
 const GENERIC_NAMES = ["행인1", "모험가A", "용병B", "마법학도", "초보도적", "마을주민", "떠돌이", "신입창병", "견습사제", "은퇴한기사"];
 
@@ -220,21 +221,6 @@ const styles = `
   .parchment-gradient {
       background-image: linear-gradient(135deg, rgba(42, 42, 42, 0.95), rgba(32, 31, 31, 0.98));
   }
-  
-  .nav-center-cutout {
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 40px;
-    background-color: var(--color-surface);
-    border-bottom-left-radius: 40px;
-    border-bottom-right-radius: 40px;
-    border: 1px solid var(--color-outline);
-    border-top: none;
-    z-index: 90;
-  }
 `;
 
 const TopBar = ({ guild, titleOverride = null }) => (
@@ -258,9 +244,8 @@ const TopBar = ({ guild, titleOverride = null }) => (
       )}
     </div>
     
-    {/* 우측 상단 메뉴 영역 */}
     <div className="flex items-center gap-4">
-       {/* 1. 새로 추가된 알림, 메시지, 설정 아이콘 시작 */}
+       {/* 상단 알림, 메시지, 설정 아이콘 */}
        <div className="flex items-center gap-3">
          <button className="flex items-center justify-center text-[#d0c5af] hover:text-[#f2ca50] transition-colors active:scale-95" aria-label="알림">
            <span className="material-symbols-outlined">notifications</span>
@@ -272,12 +257,13 @@ const TopBar = ({ guild, titleOverride = null }) => (
            <span className="material-symbols-outlined">settings</span>
          </button>
        </div>
-       {/* 새로 추가된 알림, 메시지, 설정 아이콘 끝 */}
 
-       {/* 2. 기존 골드 표시 */}
+       {/* 골드 및 경험치 표시 */}
        <div className="flex items-center bg-[#353534] px-3 py-1 rounded-full border border-[#4d4635] gap-2">
         <span className="material-symbols-outlined text-[#f2ca50] text-sm fill">monetization_on</span>
-        <span className="text-[#f2ca50] text-sm">{guild.gold}G</span>
+        <span className="text-[#f2ca50] text-sm mr-1">{guild.gold}G</span>
+        <span className="material-symbols-outlined text-[#4ade80] text-sm fill">star</span>
+        <span className="text-[#4ade80] text-sm">{guild.exp || 0}E</span>
       </div>
     </div>
   </header>
@@ -414,68 +400,88 @@ const InterviewModal = ({ member, onClose }) => {
     );
 };
 
-const MemberManagementView = ({ members, onHealMember, onRecruitClick, onInterviewClick }) => {
+const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick, onInterviewClick, onLevelUp, onLimitBreak }) => {
   return (
     <div className="w-full h-full flex flex-col space-y-4 px-4 pb-8">
       <div className="space-y-4">
-        {members.map(member => (
-          <div key={member.id} className={`parchment-gradient p-4 rounded-lg border shadow-lg flex flex-col gap-3 transition-transform active:scale-[0.98] ${member.status === 'locked' ? 'border-[#ffb4ab]/30 opacity-90' : 'border-[#4d4635]'}`}>
-            <div className="flex gap-4">
-              <div className={`w-20 h-20 rounded-md overflow-hidden border flex-shrink-0 bg-[#131313] ${member.status === 'locked' ? 'border-[#f2ca50] shadow-[0_0_10px_rgba(242,202,80,0.3)]' : 'border-[#e9c349] shadow-[inset_0_0_4px_rgba(233,195,73,0.3)]'}`}>
-                <img alt={member.name} className={`w-full h-full object-cover ${member.status === 'locked' ? 'grayscale-[0.5]' : ''}`} src={member.image} onError={handleImageError} />
-              </div>
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start">
-                    <h2 className="text-xl text-[#e5e2e1] leading-tight">{member.name}</h2>
-                    <div className="flex flex-col items-end gap-1">
-                       <span className={`text-xs px-2 py-0.5 rounded ${member.rank.includes('S') ? 'bg-[#d4af37]/20 text-[#f2ca50] border border-[#f2ca50]/30' : member.rank.includes('A') ? 'bg-[#343d96]/50 text-[#bdc2ff]' : 'bg-[#353534] text-[#d0c5af]'}`}>{member.rank}</span>
-                       {member.status === 'locked' && <span className="text-[10px] text-[#d0c5af] opacity-50 tracking-widest">[잠금됨]</span>}
-                    </div>
-                  </div>
-                  <p className="text-[#99907c] text-sm">{member.role}</p>
+        {members.map(member => {
+          const reqExp = member.level * 50;
+          const isMaxLevel = member.level >= member.maxLevel;
+          const canLevelUp = guildExp >= reqExp;
+
+          return (
+            <div key={member.id} className={`parchment-gradient p-4 rounded-lg border shadow-lg flex flex-col gap-3 transition-transform active:scale-[0.98] ${member.status === 'locked' ? 'border-[#ffb4ab]/30 opacity-90' : 'border-[#4d4635]'}`}>
+              <div className="flex gap-4">
+                <div className={`w-20 h-20 rounded-md overflow-hidden border flex-shrink-0 bg-[#131313] ${member.status === 'locked' ? 'border-[#f2ca50] shadow-[0_0_10px_rgba(242,202,80,0.3)]' : 'border-[#e9c349] shadow-[inset_0_0_4px_rgba(233,195,73,0.3)]'}`}>
+                  <img alt={member.name} className={`w-full h-full object-cover ${member.status === 'locked' ? 'grayscale-[0.5]' : ''}`} src={member.image} onError={handleImageError} />
                 </div>
-                <div className="space-y-1">
-                  <div className={`flex justify-between text-[10px] ${member.sanity < 30 ? 'text-[#ffb4ab]' : 'text-[#bdb2a1]'}`}>
-                    <span>정신력</span><span>{member.sanity}%</span>
-                  </div>
-                  <div className="h-2 w-full bg-[#131313] rounded-full overflow-hidden">
-                    <div className={`h-full ${member.sanity < 30 ? 'bg-[#ffb4ab]/60' : 'sanity-bar-fill'}`} style={{ width: `${member.sanity}%` }}></div>
-                  </div>
-                  {member.status === 'locked' && (
-                      <div className="flex items-center gap-1 text-[#ffb4ab] text-[10px] mt-1">
-                        <span className="material-symbols-outlined text-xs">error</span>
-                        <span>퀘스트 불가</span>
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl text-[#e5e2e1] leading-tight">{member.name}</h2>
+                        <span className="text-xs text-[#4ade80] font-bold">LV.{member.level}</span>
+                        <span className="text-[10px] text-[#99907c]">(Max {member.maxLevel})</span>
                       </div>
-                  )}
+                      <div className="flex flex-col items-end gap-1">
+                         <span className={`text-xs px-2 py-0.5 rounded ${member.rank.includes('S') ? 'bg-[#d4af37]/20 text-[#f2ca50] border border-[#f2ca50]/30' : member.rank.includes('A') ? 'bg-[#343d96]/50 text-[#bdc2ff]' : 'bg-[#353534] text-[#d0c5af]'}`}>{member.rank}</span>
+                         {member.status === 'locked' && <span className="text-[10px] text-[#d0c5af] opacity-50 tracking-widest">[잠금됨]</span>}
+                      </div>
+                    </div>
+                    <p className="text-[#99907c] text-sm">{member.role}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className={`flex justify-between text-[10px] ${member.sanity < 30 ? 'text-[#ffb4ab]' : 'text-[#bdb2a1]'}`}>
+                      <span>정신력</span><span>{member.sanity}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-[#131313] rounded-full overflow-hidden">
+                      <div className={`h-full ${member.sanity < 30 ? 'bg-[#ffb4ab]/60' : 'sanity-bar-fill'}`} style={{ width: `${member.sanity}%` }}></div>
+                    </div>
+                    {member.status === 'locked' && (
+                        <div className="flex items-center gap-1 text-[#ffb4ab] text-[10px] mt-1">
+                          <span className="material-symbols-outlined text-xs">error</span>
+                          <span>퀘스트 불가</span>
+                        </div>
+                    )}
+                  </div>
                 </div>
               </div>
+              
+              <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[#353534]">
+                 <button 
+                    onClick={() => onInterviewClick(member)}
+                    disabled={member.name === '이기영'}
+                    className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                 >
+                    <span className="material-symbols-outlined text-lg">chat</span>
+                    <span className="text-[10px]">면담</span>
+                 </button>
+                 <button onClick={() => onHealMember(member.id)} disabled={member.status === 'locked' || member.sanity >= 100} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    <span className="material-symbols-outlined text-lg">medication</span>
+                    <span className="text-[10px]">포션</span>
+                 </button>
+
+                 {/* 레벨업 및 한계돌파 버튼 */}
+                 {isMaxLevel ? (
+                     <button onClick={() => onLimitBreak(member.id)} disabled={member.status === 'locked'} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#ffb4ab] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        <span className="material-symbols-outlined text-lg">local_fire_department</span>
+                        <span className="text-[10px]">돌파(1000G)</span>
+                     </button>
+                 ) : (
+                     <button onClick={() => onLevelUp(member.id)} disabled={member.status === 'locked' || !canLevelUp} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#4ade80] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                        <span className="material-symbols-outlined text-lg">upgrade</span>
+                        <span className="text-[10px]">LV UP({reqExp}E)</span>
+                     </button>
+                 )}
+
+                 <button disabled={member.status === 'locked' || member.sanity === 0} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                    <span className="material-symbols-outlined text-lg">assignment</span>
+                    <span className="text-[10px]">퀘스트</span>
+                 </button>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-4 gap-2 pt-2 border-t border-[#353534]">
-               <button 
-                  onClick={() => onInterviewClick(member)}
-                  disabled={member.name === '이기영'}
-                  className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-               >
-                  <span className="material-symbols-outlined text-lg">chat</span>
-                  <span className="text-[10px]">면담</span>
-               </button>
-               <button onClick={() => onHealMember(member.id)} disabled={member.status === 'locked' || member.sanity >= 100} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                  <span className="material-symbols-outlined text-lg">medication</span>
-                  <span className="text-[10px]">포션</span>
-               </button>
-               <button className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all">
-                  <span className="material-symbols-outlined text-lg">swords</span>
-                  <span className="text-[10px]">장비</span>
-               </button>
-               <button disabled={member.status === 'locked' || member.sanity === 0} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#d0c5af] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
-                  <span className="material-symbols-outlined text-lg">assignment</span>
-                  <span className="text-[10px]">퀘스트</span>
-               </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-6">
@@ -519,7 +525,9 @@ const GachaView = ({ onSelectComplete }) => {
                 image: makeAvatarPlaceholder(`${rank}랭크`),
                 id: createId(`g_${i}`),
                 sanity: 100,
-                status: 'active'
+                status: 'active',
+                level: 1,
+                maxLevel: 20
             });
         }
         setPulled(newPulls.sort(() => Math.random() - 0.5));
@@ -653,7 +661,7 @@ const QuestsView = ({ quests, members, onStartQuest }) => {
                                 <span className="material-symbols-outlined text-sm fill">payments</span>
                                 <span className="text-sm font-bold">{quest.rewards.gold}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-[#bdc2ff]">
+                            <div className="flex items-center gap-1 text-[#4ade80]">
                                 <span className="material-symbols-outlined text-sm fill">star</span>
                                 <span className="text-sm font-bold">{quest.rewards.exp}</span>
                             </div>
@@ -701,23 +709,32 @@ const QuestResultView = ({ result, onClose }) => {
                 <div className="space-y-4 mb-8">
                     <h3 className="text-sm text-[#f2ca50] border-b border-[#f2ca50]/20 pb-1 text-center tracking-widest">결과 확인</h3>
                     {success ? (
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="flex items-center gap-3 bg-[#2a2a2a] p-3 rounded-lg border border-[#4d4635]">
-                                <div className="w-10 h-10 rounded bg-[#f2ca50]/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[#f2ca50] fill text-2xl">payments</span>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
+                                <div className="w-8 h-8 rounded bg-[#f2ca50]/20 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-[#f2ca50] fill text-xl">payments</span>
                                 </div>
-                                <div>
+                                <div className="text-center">
                                     <p className="text-[10px] text-[#d0c5af]">GOLD</p>
-                                    <p className="text-[#f2ca50] text-lg font-bold">+{quest.rewards.gold}G</p>
+                                    <p className="text-[#f2ca50] text-sm font-bold">+{quest.rewards.gold}</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-3 bg-[#2a2a2a] p-3 rounded-lg border border-[#4d4635]">
-                                <div className="w-10 h-10 rounded bg-[#bdc2ff]/20 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-[#bdc2ff] fill text-2xl">military_tech</span>
+                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
+                                <div className="w-8 h-8 rounded bg-[#4ade80]/20 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-[#4ade80] fill text-xl">star</span>
                                 </div>
-                                <div>
+                                <div className="text-center">
+                                    <p className="text-[10px] text-[#d0c5af]">EXP</p>
+                                    <p className="text-[#4ade80] text-sm font-bold">+{quest.rewards.exp}</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 bg-[#2a2a2a] p-2 rounded-lg border border-[#4d4635]">
+                                <div className="w-8 h-8 rounded bg-[#bdc2ff]/20 flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-[#bdc2ff] fill text-xl">military_tech</span>
+                                </div>
+                                <div className="text-center">
                                     <p className="text-[10px] text-[#d0c5af]">FAME</p>
-                                    <p className="text-[#bdc2ff] text-lg font-bold">+{quest.rewards.fame}</p>
+                                    <p className="text-[#bdc2ff] text-sm font-bold">+{quest.rewards.fame}</p>
                                 </div>
                             </div>
                         </div>
@@ -948,7 +965,7 @@ const AlchemyResultView = ({ result, onFinish, onSell }) => {
 export default function App() {
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [activeTab, setActiveTab] = useState('home');
-  const [currentView, setCurrentView] = useState('main'); // main, gacha, questResult, alchemyResult
+  const [currentView, setCurrentView] = useState('main');
   const [tempResult, setTempResult] = useState(null);
   const [interviewMember, setInterviewMember] = useState(null);
 
@@ -957,7 +974,16 @@ export default function App() {
       const saved = localStorage.getItem('paranGuildState');
       if (saved) {
           const parsed = JSON.parse(saved);
-          if(parsed && parsed.guild) setGameState(parsed); 
+          if(parsed && parsed.guild) {
+              // 기존 저장 데이터에 새로운 속성(exp, level 등)이 없을 경우를 대비한 안전 장치
+              parsed.guild.exp = parsed.guild.exp || 0;
+              parsed.members = parsed.members.map(m => ({
+                  ...m,
+                  level: m.level || 1,
+                  maxLevel: m.maxLevel || 20
+              }));
+              setGameState(parsed); 
+          }
       }
     } catch (e) {
       console.warn('저장 데이터를 불러오지 못했습니다.', e);
@@ -980,6 +1006,63 @@ export default function App() {
       }));
   };
 
+  // 레벨업 처리 로직
+  const handleLevelUp = (memberId) => {
+    setGameState(prev => {
+      const member = prev.members.find(m => m.id === memberId);
+      const reqExp = member.level * 50; 
+      if (prev.guild.exp >= reqExp && member.level < member.maxLevel) {
+        return {
+          ...prev,
+          guild: { ...prev.guild, exp: prev.guild.exp - reqExp },
+          members: prev.members.map(m => m.id === memberId ? { ...m, level: m.level + 1 } : m)
+        };
+      }
+      return prev;
+    });
+  };
+
+  // 한계돌파 처리 로직
+  const handleLimitBreak = (memberId) => {
+    setGameState(prev => {
+      const member = prev.members.find(m => m.id === memberId);
+      const cost = 1000;
+      if (prev.guild.gold < cost) {
+        alert("골드가 부족합니다!");
+        return prev;
+      }
+
+      // 캐릭터별 한계돌파 확률 설정
+      const rates = {
+        "김현성": 70,
+        "정하얀": 30,
+        "박덕구": 50,
+        "진청": 40,
+        "차희라": 90,
+        "선희영": 30
+      };
+      
+      const successRate = rates[member.name] || 50; // 목록에 없는 경우 기본 50%
+      const isSuccess = Math.random() * 100 <= successRate;
+
+      if (isSuccess) {
+        alert(`${member.name} 한계 돌파 성공! 최대 레벨이 20 상승했습니다.`);
+        return {
+          ...prev,
+          guild: { ...prev.guild, gold: prev.guild.gold - cost },
+          members: prev.members.map(m => m.id === memberId ? { ...m, maxLevel: m.maxLevel + 20 } : m)
+        };
+      } else {
+        alert(`${member.name} 한계 돌파 실패... 정신력이 0이 되어 퀘스트 불가 상태가 됩니다.`);
+        return {
+          ...prev,
+          guild: { ...prev.guild, gold: prev.guild.gold - cost },
+          members: prev.members.map(m => m.id === memberId ? { ...m, sanity: 0, status: 'locked' } : m)
+        };
+      }
+    });
+  };
+
   const handleStartQuest = (quest, member) => {
       const actualRate = quest.successRate * (member.sanity / 100);
       const isSuccess = Math.random() * 100 <= actualRate;
@@ -990,13 +1073,15 @@ export default function App() {
       setGameState(prev => {
           let newGold = prev.guild.gold;
           let newFame = prev.guild.fame;
+          let newExp = prev.guild.exp || 0; // 경험치 반영 추가
           if(isSuccess) {
               newGold += quest.rewards.gold;
               newFame += quest.rewards.fame;
+              newExp += quest.rewards.exp;
           }
           return {
               ...prev,
-              guild: { ...prev.guild, gold: newGold, fame: newFame },
+              guild: { ...prev.guild, gold: newGold, fame: newFame, exp: newExp },
               members: prev.members.map(m => m.id === member.id ? {...m, sanity: newSanity} : m)
           }
       });
@@ -1031,7 +1116,15 @@ export default function App() {
 
       switch(activeTab) {
           case 'home': return <HomeView guild={gameState.guild} />;
-          case 'members': return <MemberManagementView members={gameState.members} onHealMember={handleHealMember} onRecruitClick={() => setCurrentView('gacha')} onInterviewClick={(m) => setInterviewMember(m)} />;
+          case 'members': return <MemberManagementView 
+                                    members={gameState.members} 
+                                    guildExp={gameState.guild.exp}
+                                    onHealMember={handleHealMember} 
+                                    onRecruitClick={() => setCurrentView('gacha')} 
+                                    onInterviewClick={(m) => setInterviewMember(m)} 
+                                    onLevelUp={handleLevelUp}
+                                    onLimitBreak={handleLimitBreak}
+                                 />;
           case 'quests': return <QuestsView quests={gameState.quests} members={gameState.members} onStartQuest={handleStartQuest} />;
           case 'alchemy': return <AlchemyView onComplete={handleAlchemyComplete} />;
           default: return <div className="pt-24 text-center text-[#d0c5af] font-bold text-xl">창고 기능은 업데이트 준비 중입니다.</div>;
