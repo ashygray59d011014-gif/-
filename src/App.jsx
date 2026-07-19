@@ -21,8 +21,8 @@ const INITIAL_GAME_STATE = {
     { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
     { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'C급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } }
   ],
-  activeQuests: [], // 진행 중인 퀘스트 목록
-  inventory: []
+  activeQuests: [], 
+  inventory: [] // 창고 인벤토리 초기화
 };
 
 const GACHA_POOL = [
@@ -517,7 +517,6 @@ const GachaView = ({ onSelectComplete }) => {
 
     useEffect(() => {
         const newPulls = [];
-        // 미리 지정된 캐릭터들도 레벨 스탯을 명시적으로 추가하여 오류 방지
         newPulls.push({...GACHA_POOL[0], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
         newPulls.push({...GACHA_POOL[1], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
         newPulls.push({...GACHA_POOL[2], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
@@ -599,13 +598,9 @@ const GachaView = ({ onSelectComplete }) => {
     );
 };
 
-// --- 임무 수행자 다중 선택 모달 ---
 const SelectMemberModal = ({ quest, members, onConfirm, onClose }) => {
-    // S급, A급 퀘스트는 2명 필요, 그 외는 1명
     const reqCount = quest.rank.includes('S') || quest.rank.includes('A') ? 2 : 1;
     const [selectedIds, setSelectedIds] = useState([]);
-
-    // 현재 활동 가능하며 퀘스트 중이 아니고 정신력이 있는 길드원만 필터링
     const activeMembers = members.filter(m => m.status === 'active' && m.sanity > 0);
     
     const toggleSelect = (id) => {
@@ -671,7 +666,6 @@ const SelectMemberModal = ({ quest, members, onConfirm, onClose }) => {
     );
 };
 
-// --- 타이머가 적용된 진행 중인 퀘스트 카드 ---
 const ActiveQuestCard = ({ activeQuest, onComplete }) => {
     const [timeLeft, setTimeLeft] = useState(Math.max(0, activeQuest.endTime - Date.now()));
 
@@ -687,7 +681,6 @@ const ActiveQuestCard = ({ activeQuest, onComplete }) => {
 
     return (
         <div className="bg-[#2a2a2a] border border-[#bdc2ff]/50 rounded-xl p-4 shadow-lg relative overflow-hidden">
-            {/* 진행률 바 애니메이션 효과 */}
             {!isDone && <div className="absolute bottom-0 left-0 h-1 bg-[#bdc2ff] opacity-50 animate-pulse" style={{ width: '100%' }}></div>}
             
             <div className="flex justify-between items-start mb-3">
@@ -730,7 +723,6 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
 
     return (
         <div className="w-full h-full px-4 pb-8 space-y-4">
-            {/* 진행 중인 퀘스트 리스트 표시 영역 */}
             {activeQuests.length > 0 && (
                 <div className="mb-6 space-y-3">
                     <h3 className="text-sm text-[#bdc2ff] font-bold flex items-center gap-2">
@@ -795,7 +787,6 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
     );
 };
 
-// 다중 인원을 지원하도록 퀘스트 결과창 수정
 const QuestResultView = ({ result, onClose }) => {
     if(!result) return null;
     const { success, quest, members } = result;
@@ -1083,6 +1074,41 @@ const AlchemyResultView = ({ result, onFinish, onSell }) => {
     );
 };
 
+// --- 신규 창고 뷰 컴포넌트 추가 ---
+const VaultView = ({ inventory }) => {
+    return (
+        <div className="w-full h-full p-4 pb-8 space-y-4">
+            <h2 className="text-2xl text-[#f2ca50] mb-4 font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined">account_balance_wallet</span>
+                길드 창고
+            </h2>
+            {(!inventory || inventory.length === 0) ? (
+                <div className="text-center text-[#d0c5af] py-20 bg-[#2a2a2a] rounded-xl border border-[#4d4635] shadow-inner">
+                    <span className="material-symbols-outlined text-4xl opacity-50 mb-2">inventory_2</span>
+                    <p>현재 창고에 보관 중인 아이템이 없습니다.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-2 gap-4">
+                    {inventory.map(item => (
+                        <div key={item.id} className="bg-[#2a2a2a] border border-[#4d4635] p-4 rounded-xl flex flex-col items-center gap-3 relative shadow-lg">
+                            <div className="absolute top-2 right-2 bg-[#f2ca50] text-[#131313] text-xs font-bold px-2 py-0.5 rounded-full shadow-md">
+                                {item.count}개
+                            </div>
+                            <div className="w-16 h-16 bg-[#131313] rounded-full border-2 border-[#bdc2ff] flex items-center justify-center shadow-[0_0_15px_rgba(189,194,255,0.2)]">
+                                <span className="material-symbols-outlined text-4xl text-[#bdc2ff]">science</span>
+                            </div>
+                            <div className="text-center">
+                                <div className="text-[#f2ca50] font-bold text-sm">{item.rank}</div>
+                                <div className="text-[#e5e2e1] text-sm font-bold">{item.name}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function App() {
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [activeTab, setActiveTab] = useState('home');
@@ -1097,7 +1123,8 @@ export default function App() {
           const parsed = JSON.parse(saved);
           if(parsed && parsed.guild) {
               parsed.guild.exp = parsed.guild.exp || 0;
-              parsed.activeQuests = parsed.activeQuests || []; // 기존 데이터 충돌 방지
+              parsed.activeQuests = parsed.activeQuests || [];
+              parsed.inventory = parsed.inventory || []; // 인벤토리 호환성 보장
               parsed.members = parsed.members.map(m => ({
                   ...m,
                   level: m.level || 1,
@@ -1174,9 +1201,7 @@ export default function App() {
     });
   };
 
-  // 1. 임무 출발 처리 (다인 배치, 시간 설정, 상태 변경)
   const handleDispatchQuest = (quest, selectedMembers) => {
-      // 랭크별 시간 세팅: S급(20초), A급(15초), 기타(10초)
       const duration = quest.rank.includes('S') ? 20 : quest.rank.includes('A') ? 15 : 10;
       
       const newActiveQuest = {
@@ -1191,16 +1216,13 @@ export default function App() {
       setGameState(prev => ({
           ...prev,
           activeQuests: [...(prev.activeQuests || []), newActiveQuest],
-          // 파견된 멤버의 상태를 'questing'으로 변경하여 중복 출전 방지
           members: prev.members.map(m => 
               selectedMemberIds.includes(m.id) ? { ...m, status: 'questing' } : m
           )
       }));
   };
 
-  // 2. 시간이 다 된 임무 완료 처리 및 보상 획득
   const handleCompleteQuest = (activeQuest) => {
-      // 퀘스트 참가자 평균 정신력을 기준으로 성공률 계산
       const avgSanity = activeQuest.members.reduce((acc, m) => acc + m.sanity, 0) / activeQuest.members.length;
       const actualRate = activeQuest.quest.successRate * (avgSanity / 100);
       const isSuccess = Math.random() * 100 <= actualRate;
@@ -1223,9 +1245,7 @@ export default function App() {
           return {
               ...prev,
               guild: { ...prev.guild, gold: newGold, fame: newFame, exp: newExp },
-              // 완료된 퀘스트 삭제
               activeQuests: prev.activeQuests.filter(aq => aq.id !== activeQuest.id),
-              // 참가 멤버 상태 복귀 및 정신력 감소
               members: prev.members.map(m => {
                   if (memberIds.includes(m.id)) {
                       const newSanity = Math.max(0, m.sanity - 20);
@@ -1238,18 +1258,86 @@ export default function App() {
       setCurrentView('questResult');
   };
 
+  // --- 길드원 모집 완료 시 중복 캐릭터 경험치 변환 로직 적용 ---
   const handleGachaComplete = (newMembers) => {
-      setGameState(prev => ({
-          ...prev,
-          guild: { ...prev.guild, gold: Math.max(0, prev.guild.gold - 1200) },
-          members: [...prev.members, ...newMembers]
-      }));
+      setGameState(prev => {
+          let addedExp = 0;
+          const convertedMessages = [];
+          const finalMembers = [...prev.members];
+
+          newMembers.forEach(newMem => {
+              // 이름이 같다면 중복된 캐릭터로 판별
+              const isDuplicate = finalMembers.some(m => m.name === newMem.name);
+              if (isDuplicate) {
+                  // 랭크별 변환 경험치 지급
+                  let expGain = 50;
+                  if (newMem.rank.includes('SS')) expGain = 1000;
+                  else if (newMem.rank.includes('S')) expGain = 500;
+                  else if (newMem.rank.includes('A')) expGain = 300;
+                  else if (newMem.rank.includes('B')) expGain = 200;
+                  else if (newMem.rank.includes('C')) expGain = 100;
+                  else if (newMem.rank.includes('D')) expGain = 50;
+                  else expGain = 10;
+                  
+                  addedExp += expGain;
+                  convertedMessages.push(`${newMem.name}(+${expGain}E)`);
+              } else {
+                  finalMembers.push(newMem);
+              }
+          });
+
+          // 중복으로 인해 경험치로 변환된 내역 알림
+          if (convertedMessages.length > 0) {
+              alert(`중복된 길드원이 경험치로 변환되었습니다!\n\n${convertedMessages.join('\n')}`);
+          }
+
+          return {
+              ...prev,
+              guild: { 
+                  ...prev.guild, 
+                  gold: Math.max(0, prev.guild.gold - 1200), 
+                  exp: (prev.guild.exp || 0) + addedExp 
+              },
+              members: finalMembers
+          };
+      });
       setCurrentView('main');
   };
 
   const handleAlchemyComplete = (result) => {
       setTempResult(result);
       setCurrentView('alchemyResult');
+  };
+
+  // --- 연금술 결과물 인벤토리에 보관하는 로직 ---
+  const handleAlchemyStore = (result) => {
+      setGameState(prev => {
+          const potionName = '의문의 마나 물약';
+          const inventory = prev.inventory || [];
+          
+          // 이미 같은 등급의 물약이 있는지 확인
+          const existingIdx = inventory.findIndex(i => i.rank === result.rank && i.name === potionName);
+          
+          let newInventory = [...inventory];
+          if (existingIdx >= 0) {
+              newInventory[existingIdx] = {
+                  ...newInventory[existingIdx],
+                  count: newInventory[existingIdx].count + 1
+              };
+          } else {
+              newInventory.push({
+                  id: createId('inv'),
+                  name: potionName,
+                  rank: result.rank,
+                  count: 1
+              });
+          }
+          return { ...prev, inventory: newInventory };
+      });
+      
+      // 보관하기 버튼을 누르면 창고 탭으로 바로 이동
+      setCurrentView('main');
+      setActiveTab('vault');
   };
 
   const handleAlchemySell = (price) => {
@@ -1283,7 +1371,8 @@ export default function App() {
                                     onCompleteQuest={handleCompleteQuest}
                                  />;
           case 'alchemy': return <AlchemyView onComplete={handleAlchemyComplete} />;
-          default: return <div className="pt-24 text-center text-[#d0c5af] font-bold text-xl">창고 기능은 업데이트 준비 중입니다.</div>;
+          case 'vault': return <VaultView inventory={gameState.inventory || []} />;
+          default: return <div className="pt-24 text-center text-[#d0c5af] font-bold text-xl">메뉴를 선택해주세요.</div>;
       }
   };
 
@@ -1302,7 +1391,9 @@ export default function App() {
       {currentView === 'main' && <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} />}
 
       {currentView === 'questResult' && <QuestResultView result={tempResult} onClose={() => setCurrentView('main')} />}
-      {currentView === 'alchemyResult' && <AlchemyResultView result={tempResult} onFinish={() => {setCurrentView('main'); setActiveTab('home');}} onSell={handleAlchemySell} />}
+      
+      {/* 연금술 보관 버튼을 눌렀을 때 handleAlchemyStore 함수가 실행되도록 수정됨 */}
+      {currentView === 'alchemyResult' && <AlchemyResultView result={tempResult} onFinish={() => handleAlchemyStore(tempResult)} onSell={handleAlchemySell} />}
 
       {interviewMember && (
         <InterviewModal member={interviewMember} onClose={() => setInterviewMember(null)} />
