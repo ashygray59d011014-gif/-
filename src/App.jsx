@@ -371,8 +371,7 @@ const HomeView = () => {
   const [currentDialog, setCurrentDialog] = useState(BENIGORE_QUOTES[0]);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
 
-  // --- 1. 드래그(이동) 기능을 위한 상태 및 변수 추가 ---
-  const [position, setPosition] = useState({ x: 16, y: 130 }); // 초기 위치 (좌측 16px, 상단 130px)
+  const [position, setPosition] = useState({ x: 16, y: 130 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
@@ -381,7 +380,6 @@ const HomeView = () => {
       setCurrentDialog(randomLine);
   };
 
-  // --- 2. 마우스/터치로 드래그 시작 시 호출 ---
   const handleDragStart = (e) => {
       const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
       const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -393,7 +391,6 @@ const HomeView = () => {
       setIsDragging(true);
   };
 
-  // --- 3. 드래그 중 부드러운 이동 처리를 위한 전역 이벤트 설정 ---
   useEffect(() => {
       const handleDragMove = (e) => {
           if (!isDragging) return;
@@ -427,7 +424,6 @@ const HomeView = () => {
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden">
-        {/* --- 홈 화면 전체 뒷배경 --- */}
         <div className="absolute inset-0 z-0">
             <img 
                 src="./images/배경1.png" 
@@ -439,7 +435,6 @@ const HomeView = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
         </div>
 
-        {/* --- 캐릭터 이미지 --- */}
         <div className="absolute inset-0 flex items-end justify-center overflow-hidden z-10 pointer-events-none">
             <img 
                 src="./images/이기영-빛의성자.png" 
@@ -449,7 +444,6 @@ const HomeView = () => {
             />
         </div>
 
-        {/* --- 좌측 상단 길드 상태창 --- */}
         <div className="absolute left-4 top-4 z-20 flex flex-col gap-2">
             <button 
                 onClick={() => setIsStatusOpen(!isStatusOpen)}
@@ -485,13 +479,12 @@ const HomeView = () => {
             )}
         </div>
 
-        {/* --- 4. 드래그가 가능해진 알람 메시지 창 --- */}
         <div 
             className={`absolute z-30 w-[220px] bg-[#14141e]/90 backdrop-blur-md border border-[#e9c349]/50 p-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] cursor-move transition-transform ${isDragging ? 'scale-105 opacity-90' : 'scale-100 opacity-100'}`}
             style={{ 
                 left: `${position.x}px`, 
                 top: `${position.y}px`, 
-                touchAction: 'none' // 모바일에서 드래그 시 화면 스크롤 방지
+                touchAction: 'none'
             }}
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
@@ -510,10 +503,10 @@ const HomeView = () => {
             
             <button 
                 onClick={(e) => {
-                    e.stopPropagation(); // 버튼 클릭 시 이벤트 전파 방지
+                    e.stopPropagation();
                     handleChangeDialog();
                 }}
-                onMouseDown={(e) => e.stopPropagation()} // 버튼에서 드래그 시작 방지
+                onMouseDown={(e) => e.stopPropagation()} 
                 onTouchStart={(e) => e.stopPropagation()} 
                 className="mt-2 w-full py-1.5 bg-[#201f1f]/50 border border-[#4d4635] hover:bg-[#393939] transition-colors rounded text-[10px] text-[#d0c5af] flex items-center justify-center gap-1 active:scale-95"
             >
@@ -534,7 +527,7 @@ const InterviewModal = ({ member, onClose }) => {
             const lines = CHARACTER_DIALOGUES[member.name] || CHARACTER_DIALOGUES["default"];
             const randomScenario = lines[Math.floor(Math.random() * lines.length)];
             setScenario(randomScenario);
-            setFinalResponse(null); // 모달이 열릴 때마다 초기화
+            setFinalResponse(null);
         }
     }, [member]);
 
@@ -544,7 +537,6 @@ const InterviewModal = ({ member, onClose }) => {
         <div className="fixed inset-0 z-[110] bg-[#131313]/90 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-sm bg-[#201f1f] border border-[#4d4635] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                 
-                {/* 헤더 부분 */}
                 <div className="p-4 border-b border-[#353534] flex justify-between items-center bg-[#2a2a2a]">
                     <h3 className="text-[#f2ca50] text-lg font-bold flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">chat</span>
@@ -555,11 +547,9 @@ const InterviewModal = ({ member, onClose }) => {
                     </button>
                 </div>
 
-                {/* 대화창 부분 */}
                 <div className="p-6 flex flex-col items-center gap-6">
                     <div className="relative w-full">
                         <div className="bg-[#2a2a2a] p-4 rounded-xl border border-[#4d4635] shadow-inner relative z-10 min-h-[100px] flex items-center justify-center">
-                            {/* 선택지를 눌렀다면 상대의 최종 대답을, 아니면 초기 질문을 보여줌 */}
                             <p className={`text-center italic leading-relaxed ${finalResponse ? 'text-[#f2ca50]' : 'text-[#e5e2e1]'}`}>
                                 {finalResponse ? finalResponse : scenario.text}
                             </p>
@@ -572,10 +562,8 @@ const InterviewModal = ({ member, onClose }) => {
                     </div>
                 </div>
 
-                {/* 유저 선택지 및 조작 버튼 부분 */}
                 <div className="p-4 bg-[#1c1b1b] border-t border-[#353534] flex flex-col gap-2">
                     {!finalResponse ? (
-                        // 아직 대답을 선택하지 않았을 때: 선택지 버튼 출력
                         scenario.choices.map((choice, idx) => (
                             <button 
                                 key={idx} 
@@ -586,7 +574,6 @@ const InterviewModal = ({ member, onClose }) => {
                             </button>
                         ))
                     ) : (
-                        // 대답을 완료했을 때: 면담 종료 버튼 출력
                         <button 
                             onClick={onClose} 
                             className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-[0_4px_15px_rgba(242,202,80,0.3)]"
@@ -923,7 +910,6 @@ const ActiveQuestCard = ({ activeQuest, onComplete }) => {
 const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQuest }) => {
     const [selectedQuest, setSelectedQuest] = useState(null);
 
-    // 💡 핵심 로직: 현재 진행 중인(activeQuests에 있는) 퀘스트는 목록에서 제외합니다.
     const availableQuests = quests.filter(quest => 
         !activeQuests.some(aq => aq.quest.id === quest.id)
     );
@@ -945,7 +931,6 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
 
             <h3 className="text-sm text-[#d0c5af] font-bold">수행 가능한 임무</h3>
             
-            {/* 필터링된 availableQuests만 화면에 그려줍니다 */}
             {availableQuests.length === 0 ? (
                  <div className="text-center text-[#d0c5af] p-8 bg-[#2a2a2a] rounded-xl border border-[#4d4635]">
                      모든 임무가 진행 중입니다. 조금 기다려주세요!
@@ -1215,7 +1200,6 @@ const AlchemyResultView = ({ result, onFinish, onSell }) => {
     );
 };
 
-// --- 신규 창고 뷰 컴포넌트 추가 ---
 const VaultView = ({ inventory }) => {
     return (
         <div className="w-full h-full p-4 pb-8 space-y-4">
@@ -1250,6 +1234,67 @@ const VaultView = ({ inventory }) => {
     );
 };
 
+// 💡 퀘스트 결과창 컴포넌트(백지 에러의 원인이었던 부분)
+const QuestResultView = ({ result, onClose }) => {
+    if (!result) return null;
+    const { success, quest, members } = result;
+
+    return (
+        <div className="absolute inset-0 z-[120] bg-[#131313]/95 flex flex-col items-center justify-center p-4 animate-in fade-in duration-500">
+            <div className="text-center space-y-4 mb-8">
+                <span className="material-symbols-outlined text-6xl" style={{ color: success ? '#4ade80' : '#ffb4ab' }}>
+                    {success ? 'workspace_premium' : 'warning'}
+                </span>
+                <h2 className={`text-4xl font-bold ${success ? 'text-[#f2ca50]' : 'text-[#ffb4ab]'}`}>
+                    {success ? '임무 성공!' : '임무 실패...'}
+                </h2>
+                <p className="text-[#d0c5af] text-lg">[{quest.title}]</p>
+            </div>
+
+            <div className="bg-[#2a2a2a] border border-[#4d4635] rounded-xl p-6 w-full max-w-sm mb-8 shadow-lg">
+                {success ? (
+                    <div className="space-y-4">
+                        <h3 className="text-[#e5e2e1] text-center border-b border-[#4d4635] pb-2 mb-4">획득한 보상</h3>
+                        <div className="flex justify-between items-center text-[#f2ca50]">
+                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">payments</span>골드</span>
+                            <span>+{quest.rewards.gold} G</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[#4ade80]">
+                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">star</span>경험치</span>
+                            <span>+{quest.rewards.exp} E</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[#bdc2ff]">
+                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-sm">military_tech</span>명성</span>
+                            <span>+{quest.rewards.fame}</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center space-y-2">
+                        <p className="text-[#ffb4ab]">임무에 실패하여 보상을 얻지 못했습니다.</p>
+                        <p className="text-[#d0c5af] text-sm">참여한 길드원들의 정신력이 크게 하락했습니다.</p>
+                    </div>
+                )}
+                <div className="mt-6 pt-4 border-t border-[#4d4635]">
+                     <p className="text-xs text-[#d0c5af] mb-2 text-center">참여 인원 (정신력 -20)</p>
+                     <div className="flex justify-center gap-2">
+                         {members.map(m => (
+                             <img key={m.id} src={m.image} alt={m.name} className="w-10 h-10 rounded-full border border-[#4d4635] object-cover" onError={handleImageError} />
+                         ))}
+                     </div>
+                </div>
+            </div>
+
+            <button
+                onClick={onClose}
+                className="w-full max-w-sm py-4 bg-[#f2ca50] text-[#3c2f00] text-xl font-bold rounded-xl active:scale-95 transition-all shadow-[0_4px_15px_rgba(242,202,80,0.3)] hover:brightness-110"
+            >
+                확인
+            </button>
+        </div>
+    );
+};
+
+
 export default function App() {
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [activeTab, setActiveTab] = useState('home');
@@ -1257,7 +1302,6 @@ export default function App() {
   const [tempResult, setTempResult] = useState(null);
   const [interviewMember, setInterviewMember] = useState(null);
 
-  // App 컴포넌트 안쪽에 있는 첫 번째 useEffect를 아래 코드로 교체해주세요.
   useEffect(() => {
     try {
       const saved = localStorage.getItem('paranGuildState');
@@ -1274,7 +1318,6 @@ export default function App() {
                   status: m.status || 'active'
               }));
               
-              // 💡 핵심 추가: 세이브 데이터를 불러오더라도 퀘스트 목록은 항상 최신(초기화된 상태)으로 유지합니다.
               parsed.quests = INITIAL_GAME_STATE.quests; 
               
               setGameState(parsed); 
@@ -1404,7 +1447,6 @@ export default function App() {
       setCurrentView('questResult');
   };
 
-  // --- 길드원 모집 완료 시 중복 캐릭터 경험치 변환 로직 적용 ---
   const handleGachaComplete = (newMembers) => {
       setGameState(prev => {
           let addedExp = 0;
@@ -1412,10 +1454,8 @@ export default function App() {
           const finalMembers = [...prev.members];
 
           newMembers.forEach(newMem => {
-              // 이름이 같다면 중복된 캐릭터로 판별
               const isDuplicate = finalMembers.some(m => m.name === newMem.name);
               if (isDuplicate) {
-                  // 랭크별 변환 경험치 지급
                   let expGain = 50;
                   if (newMem.rank.includes('SS')) expGain = 1000;
                   else if (newMem.rank.includes('S')) expGain = 500;
@@ -1432,7 +1472,6 @@ export default function App() {
               }
           });
 
-          // 중복으로 인해 경험치로 변환된 내역 알림
           if (convertedMessages.length > 0) {
               alert(`중복된 길드원이 경험치로 변환되었습니다!\n\n${convertedMessages.join('\n')}`);
           }
@@ -1455,13 +1494,11 @@ export default function App() {
       setCurrentView('alchemyResult');
   };
 
-  // --- 연금술 결과물 인벤토리에 보관하는 로직 ---
   const handleAlchemyStore = (result) => {
       setGameState(prev => {
           const potionName = '의문의 마나 물약';
           const inventory = prev.inventory || [];
           
-          // 이미 같은 등급의 물약이 있는지 확인
           const existingIdx = inventory.findIndex(i => i.rank === result.rank && i.name === potionName);
           
           let newInventory = [...inventory];
@@ -1481,7 +1518,6 @@ export default function App() {
           return { ...prev, inventory: newInventory };
       });
       
-      // 보관하기 버튼을 누르면 창고 탭으로 바로 이동
       setCurrentView('main');
       setActiveTab('vault');
   };
@@ -1538,7 +1574,6 @@ export default function App() {
 
       {currentView === 'questResult' && <QuestResultView result={tempResult} onClose={() => setCurrentView('main')} />}
       
-      {/* 연금술 보관 버튼을 눌렀을 때 handleAlchemyStore 함수가 실행되도록 수정됨 */}
       {currentView === 'alchemyResult' && <AlchemyResultView result={tempResult} onFinish={() => handleAlchemyStore(tempResult)} onSell={handleAlchemySell} />}
 
       {interviewMember && (
