@@ -300,12 +300,61 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
 
 const HomeView = () => {
   const [currentDialog, setCurrentDialog] = useState(BENIGORE_QUOTES[0]);
-  const [isStatusOpen, setIsStatusOpen] = useState(false); // 상태창 접기/펼치기 상태
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+
+  // --- 1. 드래그(이동) 기능을 위한 상태 및 변수 추가 ---
+  const [position, setPosition] = useState({ x: 16, y: 130 }); // 초기 위치 (좌측 16px, 상단 130px)
+  const [isDragging, setIsDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   const handleChangeDialog = () => {
       const randomLine = BENIGORE_QUOTES[Math.floor(Math.random() * BENIGORE_QUOTES.length)];
       setCurrentDialog(randomLine);
   };
+
+  // --- 2. 마우스/터치로 드래그 시작 시 호출 ---
+  const handleDragStart = (e) => {
+      const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+      const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      
+      dragOffset.current = {
+          x: clientX - position.x,
+          y: clientY - position.y
+      };
+      setIsDragging(true);
+  };
+
+  // --- 3. 드래그 중 부드러운 이동 처리를 위한 전역 이벤트 설정 ---
+  useEffect(() => {
+      const handleDragMove = (e) => {
+          if (!isDragging) return;
+          const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+          const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+          
+          setPosition({
+              x: clientX - dragOffset.current.x,
+              y: clientY - dragOffset.current.y
+          });
+      };
+
+      const handleDragEnd = () => {
+          setIsDragging(false);
+      };
+
+      if (isDragging) {
+          window.addEventListener('mousemove', handleDragMove);
+          window.addEventListener('mouseup', handleDragEnd);
+          window.addEventListener('touchmove', handleDragMove, { passive: false });
+          window.addEventListener('touchend', handleDragEnd);
+      }
+
+      return () => {
+          window.removeEventListener('mousemove', handleDragMove);
+          window.removeEventListener('mouseup', handleDragEnd);
+          window.removeEventListener('touchmove', handleDragMove);
+          window.removeEventListener('touchend', handleDragEnd);
+      };
+  }, [isDragging]);
 
   return (
     <div className="w-full h-full flex flex-col relative overflow-hidden">
@@ -317,11 +366,11 @@ const HomeView = () => {
                 className="w-full h-full object-cover"
                 onError={handleImageError}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
         </div>
 
-        {/* --- 캐릭터 이미지 (items-end 로 변경하여 바닥에 고정) --- */}
+        {/* --- 캐릭터 이미지 --- */}
         <div className="absolute inset-0 flex items-end justify-center overflow-hidden z-10 pointer-events-none">
             <img 
                 src="./images/이기영-빛의성자.png" 
@@ -331,9 +380,8 @@ const HomeView = () => {
             />
         </div>
 
-        {/* --- 좌측 상단 길드 상태창 (접기/펼치기 및 크기 축소) --- */}
+        {/* --- 좌측 상단 길드 상태창 --- */}
         <div className="absolute left-4 top-4 z-20 flex flex-col gap-2">
-            {/* 상태창 토글 버튼 */}
             <button 
                 onClick={() => setIsStatusOpen(!isStatusOpen)}
                 className="flex items-center gap-1.5 bg-[#2a2a2a]/90 backdrop-blur border border-[#4d4635] px-3 py-1.5 rounded-full shadow-md text-[11px] text-[#d0c5af] hover:text-[#f2ca50] transition-colors w-max active:scale-95"
@@ -344,7 +392,6 @@ const HomeView = () => {
                 길드 현황 {isStatusOpen ? '접기' : '보기'}
             </button>
 
-            {/* 펼쳤을 때 나오는 상태 바 (크기 대폭 축소) */}
             {isStatusOpen && (
                 <div className="flex flex-col gap-2 w-36 animate-in fade-in slide-in-from-top-2">
                     <div className="bg-[#2a2a2a]/80 backdrop-blur p-2 rounded-lg border-l-2 border-[#f2ca50] shadow-md">
@@ -369,9 +416,18 @@ const HomeView = () => {
             )}
         </div>
 
-        {/* --- 알람 메시지 (상태창 열림/닫힘에 따라 위치 자동 조정) --- */}
-        <div className={`absolute left-4 z-20 w-[220px] bg-[#14141e]/90 backdrop-blur-md border border-[#e9c349]/50 p-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] transition-all duration-300 ${isStatusOpen ? 'top-[130px]' : 'top-[50px]'}`}>
-            <div className="flex items-start gap-2">
+        {/* --- 4. 드래그가 가능해진 알람 메시지 창 --- */}
+        <div 
+            className={`absolute z-30 w-[220px] bg-[#14141e]/90 backdrop-blur-md border border-[#e9c349]/50 p-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] cursor-move transition-transform ${isDragging ? 'scale-105 opacity-90' : 'scale-100 opacity-100'}`}
+            style={{ 
+                left: `${position.x}px`, 
+                top: `${position.y}px`, 
+                touchAction: 'none' // 모바일에서 드래그 시 화면 스크롤 방지
+            }}
+            onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
+        >
+            <div className="flex items-start gap-2 pointer-events-none">
                 <div className="w-6 h-6 flex-shrink-0 bg-[#f2ca50]/20 rounded-full flex items-center justify-center border border-[#f2ca50]/40 mt-0.5">
                     <span className="material-symbols-outlined text-[#f2ca50] fill text-[14px] animate-pulse">notifications_active</span>
                 </div>
@@ -382,9 +438,18 @@ const HomeView = () => {
                     </p>
                 </div>
             </div>
-            <button onClick={handleChangeDialog} className="mt-2 w-full py-1.5 bg-[#201f1f]/50 border border-[#4d4635] hover:bg-[#393939] transition-colors rounded text-[10px] text-[#d0c5af] flex items-center justify-center gap-1 active:scale-95">
+            
+            <button 
+                onClick={(e) => {
+                    e.stopPropagation(); // 버튼 클릭 시 이벤트 전파 방지
+                    handleChangeDialog();
+                }}
+                onMouseDown={(e) => e.stopPropagation()} // 버튼에서 드래그 시작 방지
+                onTouchStart={(e) => e.stopPropagation()} 
+                className="mt-2 w-full py-1.5 bg-[#201f1f]/50 border border-[#4d4635] hover:bg-[#393939] transition-colors rounded text-[10px] text-[#d0c5af] flex items-center justify-center gap-1 active:scale-95"
+            >
                 다음 메시지 보기
-                <span className="material-symbols-outlined text-[12px]">refresh</span>
+                <span className="material-symbols-outlined text-[12px] pointer-events-none">refresh</span>
             </button>
         </div>
     </div>
