@@ -28,7 +28,7 @@ const INITIAL_GAME_STATE = {
     { id: 'q9', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
   ],
   activeQuests: [], 
-  inventory: [] // 창고 인벤토리 초기화
+  inventory: []
 };
 
 const GACHA_POOL = [
@@ -367,7 +367,8 @@ const BottomNav = ({ activeTab, setActiveTab }) => {
   );
 };
 
-const HomeView = () => {
+// 💡 홈 뷰가 길드 정보(guild)를 받아오도록 수정되었습니다.
+const HomeView = ({ guild }) => {
   const [currentDialog, setCurrentDialog] = useState(BENIGORE_QUOTES[0]);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
 
@@ -460,19 +461,21 @@ const HomeView = () => {
                     <div className="bg-[#2a2a2a]/80 backdrop-blur p-2 rounded-lg border-l-2 border-[#f2ca50] shadow-md">
                         <div className="flex justify-between items-end mb-1">
                             <span className="text-[10px] text-[#d0c5af]">지지도</span>
-                            <span className="text-[11px] text-[#f2ca50] font-bold">42%</span>
+                            {/* 💡 지지도가 42% 고정에서 실제 데이터로 변경되었습니다 */}
+                            <span className="text-[11px] text-[#f2ca50] font-bold">{guild.support}%</span>
                         </div>
                         <div className="h-1 w-full bg-[#131313] rounded-full overflow-hidden">
-                            <div className="h-full bg-[#f2ca50]" style={{ width: '42%' }}></div>
+                            <div className="h-full bg-[#f2ca50]" style={{ width: `${guild.support}%` }}></div>
                         </div>
                     </div>
                     <div className="bg-[#2a2a2a]/80 backdrop-blur p-2 rounded-lg border-l-2 border-[#bdc2ff] shadow-md">
                         <div className="flex justify-between items-end mb-1">
                             <span className="text-[10px] text-[#d0c5af]">인지도</span>
-                            <span className="text-[11px] text-[#bdc2ff] font-bold">8%</span>
+                            {/* 💡 인지도 역시 고정 8%에서 실제 데이터로 변경되었습니다 */}
+                            <span className="text-[11px] text-[#bdc2ff] font-bold">{guild.fame}%</span>
                         </div>
                         <div className="h-1 w-full bg-[#131313] rounded-full overflow-hidden">
-                            <div className="h-full bg-[#bdc2ff]" style={{ width: '8%' }}></div>
+                            <div className="h-full bg-[#bdc2ff]" style={{ width: `${Math.min(100, guild.fame)}%` }}></div>
                         </div>
                     </div>
                 </div>
@@ -518,7 +521,8 @@ const HomeView = () => {
   );
 };
 
-const InterviewModal = ({ member, onClose }) => {
+// 💡 onComplete 프롭스가 추가되어 버튼 클릭 시 작동하도록 연결되었습니다.
+const InterviewModal = ({ member, onClose, onComplete }) => {
     const [scenario, setScenario] = useState(null);
     const [finalResponse, setFinalResponse] = useState(null);
 
@@ -575,7 +579,7 @@ const InterviewModal = ({ member, onClose }) => {
                         ))
                     ) : (
                         <button 
-                            onClick={onClose} 
+                            onClick={onComplete} 
                             className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-lg hover:brightness-110 active:scale-95 transition-all shadow-[0_4px_15px_rgba(242,202,80,0.3)]"
                         >
                             면담 종료
@@ -1234,7 +1238,6 @@ const VaultView = ({ inventory }) => {
     );
 };
 
-// 💡 퀘스트 결과창 컴포넌트(백지 에러의 원인이었던 부분)
 const QuestResultView = ({ result, onClose }) => {
     if (!result) return null;
     const { success, quest, members } = result;
@@ -1294,7 +1297,6 @@ const QuestResultView = ({ result, onClose }) => {
     );
 };
 
-
 export default function App() {
   const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [activeTab, setActiveTab] = useState('home');
@@ -1335,6 +1337,19 @@ export default function App() {
       console.warn('게임 진행 상황을 저장하지 못했습니다.', e);
     }
   }, [gameState]);
+
+  // 💡 면담 완료 시 지지도를 2% 올리는 함수입니다.
+  const handleInterviewComplete = () => {
+    setGameState(prev => ({
+        ...prev,
+        guild: {
+            ...prev.guild,
+            support: Math.min(100, (prev.guild.support || 0) + 2)
+        }
+    }));
+    setInterviewMember(null);
+    alert(`${interviewMember.name}와의 면담을 완료하여 길드 지지도가 2% 상승했습니다!`);
+  };
 
   const handleHealMember = (id) => {
       setGameState(prev => ({
@@ -1576,8 +1591,13 @@ export default function App() {
       
       {currentView === 'alchemyResult' && <AlchemyResultView result={tempResult} onFinish={() => handleAlchemyStore(tempResult)} onSell={handleAlchemySell} />}
 
+      {/* 💡 InterviewModal에 onComplete 프롭스로 handleInterviewComplete를 넘겨줍니다 */}
       {interviewMember && (
-        <InterviewModal member={interviewMember} onClose={() => setInterviewMember(null)} />
+        <InterviewModal 
+          member={interviewMember} 
+          onClose={() => setInterviewMember(null)}
+          onComplete={handleInterviewComplete}
+        />
       )}
     </div>
   );
