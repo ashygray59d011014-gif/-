@@ -1246,7 +1246,7 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
                                 </div>
                                 <div className="flex items-center gap-1 text-[#bdc2ff]">
                                     <span className="material-symbols-outlined text-sm fill">military_tech</span>
-                                    <span className="text-sm font-bold">{quest.rewards.fame}</span>
+                                    <span className="text-sm font-bold">인지도 +1%</span>
                                 </div>
                             </div>
                             <button onClick={() => setSelectedQuest(quest)} className="w-full py-3 bg-[#f2ca50] text-[#3c2f00] font-bold rounded-xl active:scale-95 transition-transform hover:brightness-110">
@@ -1728,7 +1728,7 @@ export default function App() {
           
           if(isSuccess) {
               newGold += activeQuest.quest.rewards.gold;
-              newFame += activeQuest.quest.rewards.fame;
+              newFame = Math.min(100, newFame + 1);
               newExp += activeQuest.quest.rewards.exp;
           }
           
