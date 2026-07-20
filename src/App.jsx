@@ -397,6 +397,15 @@ const ALCHEMY_MATERIALS = [
     { id: 'mat5', name: '용의 비늘', icon: 'local_fire_department' },
 ];
 
+const POTION_HEAL_BY_RANK = {
+    'C급': 20,
+    'B급': 40,
+    'A급': 60,
+    'S급': 100,
+};
+
+const getPotionHealAmount = (rank) => POTION_HEAL_BY_RANK[rank] || 0;
+
 const CHARACTER_IMAGES = Object.fromEntries(NAMED_CHARACTERS.map(character => [character.name, character.image]));
 
 const createId = (prefix = 'id') => {
@@ -816,7 +825,57 @@ const InterviewModal = ({ member, onClose, onComplete }) => {
     );
 };
 
-const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick, onInterviewClick, onLevelUp, onLimitBreak }) => {
+const PotionSelectModal = ({ member, inventory, onUse, onClose }) => {
+    const availablePotions = (inventory || []).filter(item => item.count > 0 && getPotionHealAmount(item.rank) > 0);
+
+    return (
+        <div className="fixed inset-0 z-[130] bg-[#131313]/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-sm bg-[#201f1f] border border-[#4d4635] rounded-xl shadow-2xl overflow-hidden">
+                <div className="p-4 border-b border-[#353534] flex items-center justify-between bg-[#2a2a2a]">
+                    <div>
+                        <h3 className="text-[#f2ca50] text-lg font-bold">사용할 포션 선택</h3>
+                        <p className="text-[#d0c5af] text-xs mt-1">{member.name} · 현재 정신력 {member.sanity}%</p>
+                    </div>
+                    <button onClick={onClose} className="text-[#d0c5af] hover:text-[#ffb4ab]">
+                        <span className="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scroll">
+                    {availablePotions.map(potion => {
+                        const healAmount = potion.healAmount || getPotionHealAmount(potion.rank);
+                        return (
+                            <button
+                                key={potion.id}
+                                onClick={() => onUse(potion.id)}
+                                className="w-full p-3 bg-[#2a2a2a] border border-[#4d4635] rounded-lg flex items-center gap-3 hover:border-[#f2ca50] active:scale-[0.98] transition-all text-left"
+                            >
+                                <div className="w-12 h-12 bg-[#131313] rounded-full border-2 border-[#bdc2ff] flex items-center justify-center flex-shrink-0">
+                                    <span className="material-symbols-outlined text-[#bdc2ff]">science</span>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[#e5e2e1] font-bold text-sm">{potion.name}</span>
+                                        <span className="text-[#f2ca50] text-xs">{potion.count}개</span>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1 text-xs">
+                                        <span className="text-[#d0c5af]">{potion.rank}</span>
+                                        <span className="text-[#4ade80]">정신력 +{healAmount}</span>
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const MemberManagementView = ({ members, inventory, guildExp, onUsePotion, onRecruitClick, onInterviewClick, onLevelUp, onLimitBreak }) => {
+  const [potionTarget, setPotionTarget] = useState(null);
+  const hasPotions = (inventory || []).some(item => item.count > 0 && getPotionHealAmount(item.rank) > 0);
+
   return (
     <div className="w-full h-full flex flex-col space-y-4 px-4 pb-8">
       <div className="space-y-4">
@@ -892,9 +951,9 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
                     <span className="material-symbols-outlined text-lg">chat</span>
                     <span className="text-[10px]">면담</span>
                  </button>
-                 <button onClick={() => onHealMember(member.id)} disabled={isLocked || isQuesting || member.sanity >= 100} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                 <button onClick={() => setPotionTarget(member)} disabled={isQuesting || member.sanity >= 100 || !hasPotions} className="py-2 flex flex-col items-center gap-1 bg-transparent rounded text-[#f2ca50] hover:bg-[#353534] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                     <span className="material-symbols-outlined text-lg">medication</span>
-                    <span className="text-[10px]">포션</span>
+                    <span className="text-[10px]">{hasPotions ? '포션' : '포션 없음'}</span>
                  </button>
 
                  {isMaxLevel ? (
@@ -936,6 +995,18 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
              </div>
           </button>
       </div>
+
+      {potionTarget && (
+        <PotionSelectModal
+          member={potionTarget}
+          inventory={inventory}
+          onClose={() => setPotionTarget(null)}
+          onUse={(potionId) => {
+            onUsePotion(potionTarget.id, potionId);
+            setPotionTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -1458,10 +1529,11 @@ const AlchemyResultView = ({ result, onFinish, onSell }) => {
             <div className="w-full max-w-md bg-[#2a2a2a] border border-[#f2ca50]/30 rounded-xl p-6 mb-8 text-center shadow-lg relative overflow-hidden">
                  <div className="absolute inset-0 bg-[#f2ca50]/5 pointer-events-none"></div>
                  <h3 className="text-2xl text-[#e5e2e1] mb-4">의문의 마나 물약</h3>
-                 <div className="space-y-2 text-sm">
-                    <p className="text-[#d0c5af]"><span className="text-[#99907c]">사용된 재료:</span> {result.mats.map(m=>m.name).join(', ')}</p>
-                    <p className="text-[#f2ca50]"><span className="text-[#99907c]">완성도:</span> {result.score}%</p>
-                 </div>
+                     <div className="space-y-2 text-sm">
+                        <p className="text-[#d0c5af]"><span className="text-[#99907c]">사용된 재료:</span> {result.mats.map(m=>m.name).join(', ')}</p>
+                        <p className="text-[#f2ca50]"><span className="text-[#99907c]">완성도:</span> {result.score}%</p>
+                        <p className="text-[#4ade80]"><span className="text-[#99907c]">정신력 회복:</span> +{getPotionHealAmount(result.rank)}</p>
+                     </div>
             </div>
 
             <div className="w-full max-w-md grid grid-cols-2 gap-4">
@@ -1500,10 +1572,11 @@ const VaultView = ({ inventory }) => {
                             <div className="w-16 h-16 bg-[#131313] rounded-full border-2 border-[#bdc2ff] flex items-center justify-center shadow-[0_0_15px_rgba(189,194,255,0.2)]">
                                 <span className="material-symbols-outlined text-4xl text-[#bdc2ff]">science</span>
                             </div>
-                            <div className="text-center">
-                                <div className="text-[#f2ca50] font-bold text-sm">{item.rank}</div>
-                                <div className="text-[#e5e2e1] text-sm font-bold">{item.name}</div>
-                            </div>
+                                <div className="text-center">
+                                    <div className="text-[#f2ca50] font-bold text-sm">{item.rank}</div>
+                                    <div className="text-[#e5e2e1] text-sm font-bold">{item.name}</div>
+                                    <div className="text-[#4ade80] text-xs mt-1">정신력 +{item.healAmount || getPotionHealAmount(item.rank)}</div>
+                                </div>
                         </div>
                     ))}
                 </div>
@@ -1586,7 +1659,10 @@ export default function App() {
           if(parsed && parsed.guild) {
               parsed.guild.exp = parsed.guild.exp || 0;
               parsed.activeQuests = parsed.activeQuests || [];
-              parsed.inventory = parsed.inventory || [];
+                  parsed.inventory = (parsed.inventory || []).map(item => ({
+                      ...item,
+                      healAmount: item.healAmount || getPotionHealAmount(item.rank)
+                  }));
               parsed.members = (parsed.members || INITIAL_GAME_STATE.members).map(m => hydrateMemberProfile({
                   ...m,
                   level: m.level || 1,
@@ -1625,13 +1701,32 @@ export default function App() {
     alert(`${interviewMember.name}와의 면담을 완료하여 길드 지지도가 2% 상승했습니다!`);
   };
 
-  const handleHealMember = (id) => {
-      setGameState(prev => ({
-          ...prev,
-          guild: { ...prev.guild, gold: Math.max(0, prev.guild.gold - 50) },
-          members: prev.members.map(m => m.id === id ? {...m, sanity: Math.min(100, m.sanity + 30)} : m)
-      }));
-  };
+      const handleUsePotion = (memberId, potionId) => {
+          setGameState(prev => {
+              const potion = (prev.inventory || []).find(item => item.id === potionId && item.count > 0);
+              const member = prev.members.find(item => item.id === memberId);
+              if (!potion || !member || member.status === 'questing' || member.sanity >= 100) return prev;
+
+              const healAmount = potion.healAmount || getPotionHealAmount(potion.rank);
+              if (healAmount <= 0) return prev;
+
+              const newSanity = Math.min(100, member.sanity + healAmount);
+              const newInventory = (prev.inventory || []).flatMap(item => {
+                  if (item.id !== potionId) return [item];
+                  return item.count > 1 ? [{ ...item, count: item.count - 1 }] : [];
+              });
+
+              return {
+                  ...prev,
+                  inventory: newInventory,
+                  members: prev.members.map(item => item.id === memberId ? {
+                      ...item,
+                      sanity: newSanity,
+                      status: newSanity > 0 && item.status === 'locked' ? 'active' : item.status
+                  } : item)
+              };
+          });
+      };
 
   const handleLevelUp = (memberId) => {
     setGameState(prev => {
@@ -1803,17 +1898,19 @@ export default function App() {
           const existingIdx = inventory.findIndex(i => i.rank === result.rank && i.name === potionName);
           
           let newInventory = [...inventory];
-          if (existingIdx >= 0) {
-              newInventory[existingIdx] = {
-                  ...newInventory[existingIdx],
-                  count: newInventory[existingIdx].count + 1
-              };
+                  if (existingIdx >= 0) {
+                      newInventory[existingIdx] = {
+                          ...newInventory[existingIdx],
+                          count: newInventory[existingIdx].count + 1,
+                          healAmount: getPotionHealAmount(result.rank)
+                      };
           } else {
               newInventory.push({
                   id: createId('inv'),
-                  name: potionName,
-                  rank: result.rank,
-                  count: 1
+                      name: potionName,
+                      rank: result.rank,
+                      healAmount: getPotionHealAmount(result.rank),
+                      count: 1
               });
           }
           return { ...prev, inventory: newInventory };
@@ -1837,10 +1934,11 @@ export default function App() {
 
       switch(activeTab) {
           case 'home': return <HomeView guild={gameState.guild} />;
-          case 'members': return <MemberManagementView 
-                                    members={gameState.members} 
-                                    guildExp={gameState.guild.exp}
-                                    onHealMember={handleHealMember} 
+              case 'members': return <MemberManagementView 
+                                        members={gameState.members} 
+                                        inventory={gameState.inventory || []}
+                                        guildExp={gameState.guild.exp}
+                                        onUsePotion={handleUsePotion} 
                                     onRecruitClick={() => setCurrentView('gacha')} 
                                     onInterviewClick={(m) => setInterviewMember(m)} 
                                     onLevelUp={handleLevelUp}
