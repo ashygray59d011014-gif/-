@@ -32,9 +32,9 @@ const INITIAL_GAME_STATE = {
 };
 
 const GACHA_POOL = [
-    { name: '진청', rank: 'SS랭크', role: '마도사', image: './images/진청-마도사_3.png' },
+    { name: '진청', rank: 'S랭크', role: '마도사', image: './images/진청-마도사_3.png' },
     { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png' },
-    { name: '선희영', rank: 'SS랭크', role: '사제', image: './images/선희영-사제_3.png' },
+    { name: '선희영', rank: 'A랭크', role: '사제', image: './images/선희영-사제_3.png' },
     { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png' },
 ];
 const GENERIC_NAMES = ["행인1", "모험가A", "용병B", "마법학도", "초보도적", "마을주민", "떠돌이", "신입창병", "견습사제", "은퇴한기사"];
@@ -44,7 +44,7 @@ const CHARACTER_DIALOGUES = {
     {
       text: "\"오, 오빠... 무슨 일이에요? 헤헤.. 오랜만에 피, 피크닉 갈래요?\"",
       choices: [
-        { reply: "응, 그러자.", nextText: "\"와아! 정말요? 당장 도시락 싸올게요! 헤헤... 평생 곁에 있을게...\"" },
+        { reply: "응, 그러자.", nextText: "\"와아! 정말요? 당장 도시락 싸올게요! 헤헤... 소, 소라야아! 소라가 어디있지...?\"" },
         { reply: "지금은 바빠.", nextText: "\"아... 네... 오빠가 바쁘시면 어쩔 수 없죠... (어딘가 서늘한 미소를 지으며) 기다릴게요...?\"" }
       ]
     },
@@ -710,17 +710,39 @@ const GachaView = ({ onSelectComplete }) => {
 
     useEffect(() => {
         const newPulls = [];
-        newPulls.push({...GACHA_POOL[0], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
-        newPulls.push({...GACHA_POOL[1], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
-        newPulls.push({...GACHA_POOL[2], id: createId('g_spec'), status: 'active', sanity: 100, level: 1, maxLevel: 20});
         
-        for(let i=3; i<10; i++) {
-            const rank = ['C', 'D', 'E', 'F'][Math.floor(Math.random() * 4)];
+        for(let i = 0; i < 10; i++) {
+            const rand = Math.random() * 100;
+            let pulledChar;
+
+            if (rand < 2) {
+                // 2% 확률: S랭크 (진청, 차희라 등)
+                const sPool = GACHA_POOL.filter(c => c.rank.includes('S')); 
+                pulledChar = sPool[Math.floor(Math.random() * sPool.length)] || GACHA_POOL[0];
+            } else if (rand < 7) {
+                // 5% 확률: A랭크 (선희영 등)
+                const aPool = GACHA_POOL.filter(c => c.rank === 'A랭크');
+                pulledChar = aPool.length > 0 ? aPool[Math.floor(Math.random() * aPool.length)] : {
+                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
+                    rank: 'A랭크', role: '정예', image: makeAvatarPlaceholder('A랭크')
+                };
+            } else if (rand < 27) {
+                // 20% 확률: B랭크 (일반 캐릭터)
+                pulledChar = {
+                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
+                    rank: 'B랭크', role: '숙련', image: makeAvatarPlaceholder('B랭크')
+                };
+            } else {
+                // 73% 확률: C 또는 D랭크 (일반 캐릭터)
+                const rank = Math.random() > 0.5 ? 'C' : 'D';
+                pulledChar = {
+                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
+                    rank: `${rank}랭크`, role: '일반', image: makeAvatarPlaceholder(`${rank}랭크`)
+                };
+            }
+
             newPulls.push({
-                name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
-                rank: `${rank}랭크`,
-                role: '일반',
-                image: makeAvatarPlaceholder(`${rank}랭크`),
+                ...pulledChar,
                 id: createId(`g_${i}`),
                 sanity: 100,
                 status: 'active',
@@ -728,11 +750,12 @@ const GachaView = ({ onSelectComplete }) => {
                 maxLevel: 20
             });
         }
+        
         setPulled(newPulls.sort(() => Math.random() - 0.5));
         const timer = setTimeout(() => setIsAnimating(false), 2000);
         return () => clearTimeout(timer);
     }, []);
-
+    
     const toggleSelect = (id) => {
         if(selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter(selId => selId !== id));
