@@ -94,7 +94,7 @@ const INITIAL_GAME_STATE = {
   members: [
     createNamedMember('이기영', { id: 'm1', sanity: 85 }),
     createNamedMember('정하얀', { id: 'm2', sanity: 42 }),
-    createNamedMember('김현성', { id: 'm3', sanity: 0, status: 'locked' }),
+    createNamedMember('김현성', { id: 'm3', sanity: 0 }),
     createNamedMember('박덕구', { id: 'm4', sanity: 98 })
   ],
   quests: [
