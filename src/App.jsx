@@ -1,6 +1,87 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 // --- DATA & INITIAL STATE ---
+const NAMED_CHARACTERS = [
+  { name: '이기영', age: 25, personality: '용의주도한 전략가', jobs: '연금술사>생체연금소환사>드래곤 알케미스트>빛의 연금술사>희생과 부활의 신', rank: 'SS랭크', imageFile: '이기영-연금술사' },
+  { name: '김현성', age: 22, personality: '선의의 중재자', jobs: '검사>검의 좌>노을빛 검성>노을빛 신', rank: 'SS랭크', imageFile: '김현성' },
+  { name: '정하얀', age: 21, personality: '순수한 옹호자', jobs: '마법사>원소 마법사>대마법사>마법의 신', rank: 'SS랭크', imageFile: '정하얀-마법사_2' },
+  { name: '박덕구', age: 23, personality: '단순무식한 열정가', jobs: '방패병>강철방패병', rank: 'B랭크', imageFile: '박덕구-탱커' },
+  { name: '진청', age: 30, personality: '계획적인 전술가', jobs: '군단 마도사', rank: 'S랭크', imageFile: '진청-마도사_3' },
+  { name: '이지혜', age: 29, personality: '이기적인 야망가', jobs: '지휘관', rank: 'C랭크', imageFile: '이지혜' },
+  { name: '정진호', age: 29, personality: '계산적인 살인자', jobs: '마검사', rank: 'A랭크', imageFile: '정진호' },
+  { name: '이상희', age: 33, personality: '이상적인 중재자', jobs: '성스러운 기사', rank: 'B랭크', imageFile: '이상희' },
+  { name: '차희라', age: 28, personality: '예측 불가능한 혁신가', jobs: '용병여왕', rank: 'SS랭크', imageFile: '차희라-투사_3' },
+  { name: '선희영', age: 32, personality: '이상적인 봉사자', jobs: '태양의 사제', rank: 'A랭크', imageFile: '선희영-사제_3' },
+  { name: '김예리', age: 14, personality: '상처받은 도둑', jobs: '궁수', rank: 'C랭크', imageFile: '김예리' },
+  { name: '정유라', age: 29, personality: '계산적인 전략가', jobs: '암살도적', rank: 'D랭크', imageFile: '정유라' },
+  { name: '황정연', age: 34, personality: '호들갑떠는 낙천주의자', jobs: '마도학자', rank: 'B랭크', imageFile: '황정연' },
+  { name: '카스가노 유노', age: 20, personality: '타락한 구도자', jobs: '무녀', rank: 'A랭크', imageFile: '카스가노 유노' },
+  { name: '이토 소우타', age: 28, personality: '용의주도한 전략가', jobs: '무사', rank: 'B랭크', imageFile: '이토 소우타' },
+  { name: '조혜진', age: 25, personality: '고지식한 원칙주의자', jobs: '창술전문가', rank: 'A랭크', imageFile: '조혜진-창술사' },
+  { name: '샤오린', age: 22, personality: '호기심 많은 탐구자', jobs: '채찍기술자', rank: 'B랭크', imageFile: '샤오린' },
+  { name: '유아영', age: 21, personality: '소심한 낙천주의자', jobs: '대장장이', rank: 'B랭크', imageFile: '유아영' },
+  { name: '김기철', age: 25, personality: '이기적인 낙천주의자', jobs: '전사', rank: 'E랭크', imageFile: '김기철' },
+  { name: '알렉산드로', age: 39, personality: '단순무식한 살인자', jobs: '로나프의 싸움꾼', rank: 'A랭크', imageFile: '알렉산드로' },
+  { name: '엘레나', age: 231, personality: '호기심 많은 옹호자', jobs: '엘룬의 수호자', rank: 'C랭크', imageFile: '엘레나' },
+  { name: '한소라', age: 21, personality: '불안한 이기주의자', jobs: '흑마법사', rank: 'B랭크', imageFile: '한소라-흑마법사' },
+  { name: '김창렬', age: 23, personality: '침묵하는 낭만주의자', jobs: '암살자', rank: 'A랭크', imageFile: '김창렬-암살자' },
+].map(character => {
+  const jobPath = character.jobs.split('>').map(job => job.trim()).filter(Boolean);
+  return {
+    ...character,
+    jobPath,
+    jobStage: 0,
+    role: jobPath[0],
+    image: `./images/${character.imageFile || character.name}.png`,
+  };
+});
+
+const NAMED_CHARACTER_MAP = Object.fromEntries(NAMED_CHARACTERS.map(character => [character.name, character]));
+
+const createNamedMember = (name, overrides = {}) => {
+  const character = NAMED_CHARACTER_MAP[name];
+  return {
+    ...character,
+    jobPath: [...character.jobPath],
+    jobStage: 0,
+    role: character.jobPath[0],
+    level: 1,
+    maxLevel: 20,
+    status: 'active',
+    sanity: 100,
+    ...overrides,
+  };
+};
+
+const hydrateMemberProfile = (member) => {
+  const character = NAMED_CHARACTER_MAP[member.name];
+  if (!character) {
+    const jobPath = Array.isArray(member.jobPath) && member.jobPath.length ? member.jobPath : [member.role || '일반'];
+    return {
+      ...member,
+      age: member.age ?? null,
+      personality: member.personality || '평범한 모험가',
+      jobPath,
+      jobStage: Number.isInteger(member.jobStage) ? member.jobStage : 0,
+      role: member.role || jobPath[0],
+    };
+  }
+
+  const jobPath = [...character.jobPath];
+  const savedStage = Number.isInteger(member.jobStage) ? member.jobStage : jobPath.indexOf(member.role);
+  const jobStage = Math.max(0, Math.min(savedStage < 0 ? 0 : savedStage, jobPath.length - 1));
+  return {
+    ...member,
+    age: character.age,
+    personality: character.personality,
+    rank: character.rank,
+    image: member.image || character.image,
+    jobPath,
+    jobStage,
+    role: jobPath[jobStage],
+  };
+};
+
 const INITIAL_GAME_STATE = {
   guild: {
     name: '파란 길드',
@@ -11,10 +92,10 @@ const INITIAL_GAME_STATE = {
     exp: 0, 
   },
   members: [
-    { id: 'm1', name: '이기영', rank: '일반', role: '연금술사', sanity: 85, image: './images/이기영-연금술사.png', status: 'active', level: 1, maxLevel: 20 },
-    { id: 'm2', name: '정하얀', rank: 'S랭크', role: '마법사', sanity: 42, image: './images/정하얀-마법사_2.png', status: 'active', level: 1, maxLevel: 20 },
-    { id: 'm3', name: '김현성', rank: 'SS랭크', role: '검사', sanity: 0, image: './images/김현성.png', status: 'locked', level: 1, maxLevel: 20 },
-    { id: 'm4', name: '박덕구', rank: 'B랭크', role: '탱커', sanity: 98, image: './images/박덕구-탱커.png', status: 'active', level: 1, maxLevel: 20 }
+    createNamedMember('이기영', { id: 'm1', sanity: 85 }),
+    createNamedMember('정하얀', { id: 'm2', sanity: 42 }),
+    createNamedMember('김현성', { id: 'm3', sanity: 0, status: 'locked' }),
+    createNamedMember('박덕구', { id: 'm4', sanity: 98 })
   ],
   quests: [
     { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
@@ -31,13 +112,8 @@ const INITIAL_GAME_STATE = {
   inventory: []
 };
 
-const GACHA_POOL = [
-    { name: '진청', rank: 'S랭크', role: '마도사', image: './images/진청-마도사_3.png' },
-    { name: '차희라', rank: 'SS랭크', role: '투사', image: './images/차희라-투사_3.png' },
-    { name: '선희영', rank: 'A랭크', role: '사제', image: './images/선희영-사제_3.png' },
-    { name: '견습사제', rank: 'D랭크', role: '검사', image: './images/견습사제.png' },
-];
-const GENERIC_NAMES = ["행인1", "모험가A", "용병B", "마법학도", "초보도적", "마을주민", "떠돌이", "신입창병", "견습사제", "은퇴한기사"];
+const GACHA_POOL = NAMED_CHARACTERS.map(character => ({ ...character, jobPath: [...character.jobPath] }));
+const GENERIC_NAMES = ["행인", "모험가", "용병", "마법학도", "초보도적", "마을주민", "떠돌이", "신입창병", "견습사제", "은퇴한기사"];
 
 const CHARACTER_DIALOGUES = {
   "정하얀": [
@@ -165,15 +241,7 @@ const ALCHEMY_MATERIALS = [
     { id: 'mat5', name: '용의 비늘', icon: 'local_fire_department' },
 ];
 
-const CHARACTER_IMAGES = {
-  '이기영': './images/이기영-연금술사.png',
-  '정하얀': './images/정하얀-마법사_2.png',
-  '김현성': './images/김현성.png',
-  '박덕구': './images/박덕구-탱커.png',
-  '진청': './images/진청-마도사_3.png',
-  '차희라': './images/차희라-투사_3.png',
-  '선희영': './images/선희영-사제_3.png',
-};
+const CHARACTER_IMAGES = Object.fromEntries(NAMED_CHARACTERS.map(character => [character.name, character.image]));
 
 const createId = (prefix = 'id') => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -528,7 +596,14 @@ const InterviewModal = ({ member, onClose, onComplete }) => {
 
     useEffect(() => {
         if (member) {
-            const lines = CHARACTER_DIALOGUES[member.name] || CHARACTER_DIALOGUES["default"];
+            const profileDialogue = [{
+                text: `\"${member.role} ${member.name}, 면담 요청을 확인했습니다.\"`,
+                choices: [
+                    { reply: "요즘 길드 생활은 어때?", nextText: `\"제 성향을 한마디로 말하면 '${member.personality || '평범한 모험가'}'에 가깝겠군요. 맡은 역할은 다하겠습니다.\"` },
+                    { reply: "앞으로의 목표가 궁금해.", nextText: `\"지금은 ${member.role}로서 더 강해지는 것이 목표입니다. 다음 임무도 맡겨 주십시오.\"` }
+                ]
+            }];
+            const lines = CHARACTER_DIALOGUES[member.name] || profileDialogue;
             const randomScenario = lines[Math.floor(Math.random() * lines.length)];
             setScenario(randomScenario);
             setFinalResponse(null);
@@ -602,6 +677,7 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
           const canLevelUp = guildExp >= reqExp;
           const isLocked = member.status === 'locked';
           const isQuesting = member.status === 'questing';
+          const nextJob = Array.isArray(member.jobPath) ? member.jobPath[(member.jobStage || 0) + 1] : null;
           
           let cardStyle = 'border-[#4d4635]';
           if (isLocked) cardStyle = 'border-[#ffb4ab]/30 opacity-90';
@@ -627,7 +703,19 @@ const MemberManagementView = ({ members, guildExp, onHealMember, onRecruitClick,
                          {isQuesting && <span className="text-[10px] text-[#bdc2ff] tracking-widest font-bold">[임무 중]</span>}
                       </div>
                     </div>
-                    <p className="text-[#99907c] text-sm">{member.role}</p>
+                    <div className="mt-1 grid grid-cols-[42px_1fr] gap-x-2 gap-y-0.5 text-[11px] leading-snug">
+                      <span className="text-[#827968]">나이</span>
+                      <span className="text-[#d0c5af]">{member.age != null ? `${member.age}세` : '미상'}</span>
+                      <span className="text-[#827968]">성향</span>
+                      <span className="text-[#d0c5af] break-keep">{member.personality || '미상'}</span>
+                      <span className="text-[#827968]">직업</span>
+                      <span className="text-[#f2ca50] break-keep">{member.role}</span>
+                      <span className="text-[#827968]">등급</span>
+                      <span className="text-[#d0c5af]">{member.rank}</span>
+                    </div>
+                    {nextJob && (
+                      <p className="mt-1 text-[10px] text-[#bdc2ff]">다음 직업: {nextJob} · 한계돌파 시 획득</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className={`flex justify-between text-[10px] ${member.sanity < 30 ? 'text-[#ffb4ab]' : 'text-[#bdb2a1]'}`}>
@@ -710,35 +798,47 @@ const GachaView = ({ onSelectComplete }) => {
 
     useEffect(() => {
         const newPulls = [];
+
+        const pullNamedOrGeneric = (ranks, genericRole, namedChance = 0.65) => {
+            const acceptedRanks = Array.isArray(ranks) ? ranks : [ranks];
+            const namedPool = GACHA_POOL.filter(character => acceptedRanks.includes(character.rank));
+            if (namedPool.length > 0 && Math.random() < namedChance) {
+                const named = namedPool[Math.floor(Math.random() * namedPool.length)];
+                return { ...named, jobPath: [...named.jobPath] };
+            }
+
+            const rank = acceptedRanks[Math.floor(Math.random() * acceptedRanks.length)];
+            const role = genericRole;
+            return {
+                name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
+                age: 18 + Math.floor(Math.random() * 28),
+                personality: '평범한 모험가',
+                rank,
+                role,
+                jobPath: [role],
+                jobStage: 0,
+                image: makeAvatarPlaceholder(rank)
+            };
+        };
         
         for(let i = 0; i < 10; i++) {
             const rand = Math.random() * 100;
             let pulledChar;
 
             if (rand < 2) {
-                // 2% 확률: S랭크 (진청, 차희라 등)
-                const sPool = GACHA_POOL.filter(c => c.rank.includes('S')); 
-                pulledChar = sPool[Math.floor(Math.random() * sPool.length)] || GACHA_POOL[0];
+                // 2% 확률: S/SS랭크 네임드
+                pulledChar = pullNamedOrGeneric(['S랭크', 'SS랭크'], '정예', 1);
             } else if (rand < 7) {
-                // 5% 확률: A랭크 (선희영 등)
-                const aPool = GACHA_POOL.filter(c => c.rank === 'A랭크');
-                pulledChar = aPool.length > 0 ? aPool[Math.floor(Math.random() * aPool.length)] : {
-                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
-                    rank: 'A랭크', role: '정예', image: makeAvatarPlaceholder('A랭크')
-                };
+                // 5% 확률: A랭크
+                pulledChar = pullNamedOrGeneric('A랭크', '정예', 0.8);
             } else if (rand < 27) {
-                // 20% 확률: B랭크 (일반 캐릭터)
-                pulledChar = {
-                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
-                    rank: 'B랭크', role: '숙련', image: makeAvatarPlaceholder('B랭크')
-                };
+                // 20% 확률: B랭크
+                pulledChar = pullNamedOrGeneric('B랭크', '숙련', 0.65);
             } else {
-                // 73% 확률: C 또는 D랭크 (일반 캐릭터)
-                const rank = Math.random() > 0.5 ? 'C' : 'D';
-                pulledChar = {
-                    name: GENERIC_NAMES[Math.floor(Math.random() * GENERIC_NAMES.length)],
-                    rank: `${rank}랭크`, role: '일반', image: makeAvatarPlaceholder(`${rank}랭크`)
-                };
+                // 73% 확률: C/D/E랭크 (낮은 등급 네임드 포함)
+                const lowRanks = ['C랭크', 'C랭크', 'C랭크', 'D랭크', 'D랭크', 'E랭크'];
+                const selectedRank = lowRanks[Math.floor(Math.random() * lowRanks.length)];
+                pulledChar = pullNamedOrGeneric(selectedRank, '일반', 0.6);
             }
 
             newPulls.push({
@@ -747,7 +847,8 @@ const GachaView = ({ onSelectComplete }) => {
                 sanity: 100,
                 status: 'active',
                 level: 1,
-                maxLevel: 20
+                maxLevel: 20,
+                jobStage: pulledChar.jobStage || 0
             });
         }
         
@@ -755,7 +856,7 @@ const GachaView = ({ onSelectComplete }) => {
         const timer = setTimeout(() => setIsAnimating(false), 2000);
         return () => clearTimeout(timer);
     }, []);
-    
+
     const toggleSelect = (id) => {
         if(selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter(selId => selId !== id));
@@ -793,6 +894,7 @@ const GachaView = ({ onSelectComplete }) => {
                             <img src={char.image} alt={char.name} className={`w-20 h-20 rounded-full mb-2 object-cover border-2 ${isSS ? 'border-[#f2ca50]' : 'border-[#4d4635]'}`} onError={handleImageError} />
                             <div className={`text-lg font-bold ${isSS ? 'text-[#f2ca50]' : 'text-[#e5e2e1]'}`}>{char.name}</div>
                             <div className="text-xs text-[#d0c5af] bg-[#131313] px-2 py-1 rounded-full mt-1">{char.rank} - {char.role}</div>
+                            <div className="text-[10px] text-[#99907c] mt-1">{char.age ?? '나이 미상'}{char.age != null ? '세' : ''} · {char.personality || '평범한 모험가'}</div>
                         </div>
                     );
                 })}
@@ -1336,7 +1438,7 @@ export default function App() {
               parsed.guild.exp = parsed.guild.exp || 0;
               parsed.activeQuests = parsed.activeQuests || [];
               parsed.inventory = parsed.inventory || [];
-              parsed.members = parsed.members.map(m => ({
+              parsed.members = (parsed.members || INITIAL_GAME_STATE.members).map(m => hydrateMemberProfile({
                   ...m,
                   level: m.level || 1,
                   maxLevel: m.maxLevel || 20,
@@ -1411,11 +1513,23 @@ export default function App() {
       const isSuccess = Math.random() * 100 <= successRate;
 
       if (isSuccess) {
-        alert(`${member.name} 한계 돌파 성공! 최대 레벨이 20 상승했습니다.`);
+        const jobPath = Array.isArray(member.jobPath) && member.jobPath.length ? member.jobPath : [member.role];
+        const currentJobStage = Number.isInteger(member.jobStage) ? member.jobStage : Math.max(0, jobPath.indexOf(member.role));
+        const nextJobStage = Math.min(currentJobStage + 1, jobPath.length - 1);
+        const unlockedJob = nextJobStage > currentJobStage ? jobPath[nextJobStage] : null;
+        alert(unlockedJob
+          ? `${member.name} 한계 돌파 성공!\n새 직업 [${unlockedJob}]을(를) 획득하고 최대 레벨이 20 상승했습니다.`
+          : `${member.name} 한계 돌파 성공! 최대 레벨이 20 상승했습니다.`
+        );
         return {
           ...prev,
           guild: { ...prev.guild, gold: prev.guild.gold - cost },
-          members: prev.members.map(m => m.id === memberId ? { ...m, maxLevel: m.maxLevel + 20 } : m)
+          members: prev.members.map(m => m.id === memberId ? {
+            ...m,
+            maxLevel: m.maxLevel + 20,
+            jobStage: nextJobStage,
+            role: jobPath[nextJobStage]
+          } : m)
         };
       } else {
         alert(`${member.name} 한계 돌파 실패... 정신력이 0이 되어 퀘스트 불가 상태가 됩니다.`);
