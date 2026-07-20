@@ -98,15 +98,15 @@ const INITIAL_GAME_STATE = {
     createNamedMember('박덕구', { id: 'm4', sanity: 98 })
   ],
   quests: [
-    { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
-    { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
-    { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', rank: 'F급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } },
-    { id: 'q4', title: '고블린 소굴 토벌', desc: '외곽 지역에 출몰하는 고블린 무리를 소탕해야 합니다.', rank: 'D급', successRate: 95, rewards: { gold: 200, exp: 100, fame: 5 } },
-    { id: 'q5', title: '안개 숲 마수 토벌', desc: '숲을 장악한 거대한 마수들을 쫓아내고 평화를 되찾으세요.', rank: 'C급', successRate: 85, rewards: { gold: 500, exp: 200, fame: 10 } },
-    { id: 'q6', title: '대주교의 만찬회 참석', desc: '베니고어 교단 대주교의 만찬회에 참석하여 교류를 다집니다.', rank: 'B급', successRate: 90, rewards: { gold: 800, exp: 300, fame: 20 } },
-    { id: 'q7', title: '거울 던전 탐사', desc: '현실과 환상이 교차하는 거울 던전의 심연을 조사하십시오.', rank: 'A급', successRate: 75, rewards: { gold: 1500, exp: 500, fame: 30 } },
-    { id: 'q8', title: '악마 소환사 추적', desc: '금지된 흑마법으로 악마를 부리는 이단자를 처단해야 합니다.', rank: 'S급', successRate: 60, rewards: { gold: 3000, exp: 1000, fame: 50 } },
-    { id: 'q9', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
+    { id: 'q1', title: '던전 토벌 임무', desc: '심연의 틈새에서 흘러나오는 마기를 정화해야 합니다.', image: './images/던전.png', rank: 'S급', successRate: 85, rewards: { gold: 1200, exp: 450, fame: 15 } },
+    { id: 'q2', title: '베니고어 교단 방문', desc: '대주교와의 비밀 회담을 위해 호위 기사를 파견하십시오.', image: './images/베니.png', rank: 'A급', successRate: 92, rewards: { gold: 800, exp: 300, fame: 10 } },
+    { id: 'q3', title: '대륙 보호 위원회 참여', desc: '봉사 활동 임무', image: './images/대륙.png', rank: 'F급', successRate: 100, rewards: { gold: 100, exp: 50, fame: 5 } },
+    { id: 'q4', title: '고블린 소굴 토벌', desc: '외곽 지역에 출몰하는 고블린 무리를 소탕해야 합니다.', image: './images/고블린.png', rank: 'D급', successRate: 95, rewards: { gold: 200, exp: 100, fame: 5 } },
+    { id: 'q5', title: '안개 숲 마수 토벌', desc: '숲을 장악한 거대한 마수들을 쫓아내고 평화를 되찾으세요.', image: './images/안개.png', rank: 'C급', successRate: 85, rewards: { gold: 500, exp: 200, fame: 10 } },
+    { id: 'q6', title: '대주교의 만찬회 참석', desc: '베니고어 교단 대주교의 만찬회에 참석하여 교류를 다집니다.', image: './images/대주교.png', rank: 'B급', successRate: 90, rewards: { gold: 800, exp: 300, fame: 20 } },
+    { id: 'q7', title: '거울 던전 탐사', desc: '현실과 환상이 교차하는 거울 던전의 심연을 조사하십시오.', image: './images/거울.png', rank: 'A급', successRate: 75, rewards: { gold: 1500, exp: 500, fame: 30 } },
+    { id: 'q8', title: '악마 소환사 추적', desc: '금지된 흑마법으로 악마를 부리는 이단자를 처단해야 합니다.', image: './images/악마.png', rank: 'S급', successRate: 60, rewards: { gold: 3000, exp: 1000, fame: 50 } },
+    { id: 'q9', title: '고대 드래곤의 둥지 정찰', desc: '잠든 고대 드래곤의 둥지에 잠입하여 유물을 회수하십시오.', image: './images/고대.png', rank: 'SS급', successRate: 40, rewards: { gold: 5000, exp: 2500, fame: 100 } }
   ],
   activeQuests: [], 
   inventory: []
@@ -875,11 +875,20 @@ const PotionSelectModal = ({ member, inventory, onUse, onClose }) => {
 const MemberManagementView = ({ members, inventory, guildExp, onUsePotion, onRecruitClick, onInterviewClick, onLevelUp, onLimitBreak }) => {
   const [potionTarget, setPotionTarget] = useState(null);
   const hasPotions = (inventory || []).some(item => item.count > 0 && getPotionHealAmount(item.rank) > 0);
+  const fixedMemberOrder = { '이기영': 0, '정하얀': 1, '김현성': 2, '박덕구': 3 };
+  const orderedMembers = [...members].sort((a, b) => {
+    const aFixed = fixedMemberOrder[a.name];
+    const bFixed = fixedMemberOrder[b.name];
+    if (aFixed !== undefined && bFixed !== undefined) return aFixed - bFixed;
+    if (aFixed !== undefined) return -1;
+    if (bFixed !== undefined) return 1;
+    return (b.level || 1) - (a.level || 1);
+  });
 
   return (
     <div className="w-full h-full flex flex-col space-y-4 px-4 pb-8">
       <div className="space-y-4">
-        {members.map(member => {
+        {orderedMembers.map(member => {
           const reqExp = member.level * 50;
           const isMaxLevel = member.level >= member.maxLevel;
           const canLevelUp = guildExp >= reqExp;
@@ -1286,13 +1295,26 @@ const QuestsView = ({ quests, members, activeQuests, onStartQuest, onCompleteQue
                  </div>
             ) : (
                 availableQuests.map(quest => (
-                    <div key={quest.id} className="bg-[#1c1b1b] border border-[#f2ca50]/30 rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#f2ca50]/60">
-                        <div className="relative h-24 w-full bg-[#2a2a2a]">
+                    <div
+                        key={quest.id}
+                        className="bg-[#1c1b1b] border border-[#f2ca50]/30 rounded-xl overflow-hidden shadow-lg transition-all hover:border-[#f2ca50]/60"
+                    >
+                        <div className="relative h-40 w-full overflow-hidden bg-[#2a2a2a]">
+                            <img
+                                src={quest.image}
+                                alt={`${quest.title} 배경`}
+                                className="absolute inset-0 w-full h-full object-cover object-center"
+                                onError={(event) => {
+                                    event.currentTarget.style.display = 'none';
+                                    console.warn(`임무 배경 이미지를 불러오지 못했습니다: ${quest.image}`);
+                                }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#131313]/75 via-transparent to-[#131313]/10"></div>
                             <div className={`absolute top-3 left-3 text-[#131313] px-3 py-1 rounded-lg font-bold shadow-sm ${quest.rank.includes('S') ? 'bg-[#ffb4ab]' : quest.rank.includes('A') ? 'bg-[#bdc2ff]' : 'bg-[#f2ca50]'}`}>
                                 {quest.rank}
                             </div>
                         </div>
-                        <div className="p-4 space-y-4">
+                        <div className="p-4 space-y-4 bg-[#1c1b1b]">
                             <div>
                                 <h3 className={`text-xl font-bold ${quest.rank.includes('S') ? 'text-[#ffb4ab]' : 'text-[#f2ca50]'}`}>{quest.title}</h3>
                                 <p className="text-sm text-[#d0c5af] mt-1">{quest.desc}</p>
@@ -1625,7 +1647,7 @@ const QuestResultView = ({ result, onClose }) => {
                     </div>
                 )}
                 <div className="mt-6 pt-4 border-t border-[#4d4635]">
-                     <p className="text-xs text-[#d0c5af] mb-2 text-center">참여 인원 (정신력 -20)</p>
+                     <p className="text-xs text-[#d0c5af] mb-2 text-center">참여 인원 (정신력 -{success ? 5 : 10})</p>
                      <div className="flex justify-center gap-2">
                          {members.map(m => (
                              <img key={m.id} src={m.image} alt={m.name} className="w-10 h-10 rounded-full border border-[#4d4635] object-cover" onError={handleImageError} />
@@ -1833,7 +1855,8 @@ export default function App() {
               activeQuests: prev.activeQuests.filter(aq => aq.id !== activeQuest.id),
               members: prev.members.map(m => {
                   if (memberIds.includes(m.id)) {
-                      const newSanity = Math.max(0, m.sanity - 20);
+                      const sanityCost = isSuccess ? 5 : 10;
+                      const newSanity = Math.max(0, m.sanity - sanityCost);
                       return { ...m, sanity: newSanity, status: newSanity === 0 ? 'locked' : 'active' };
                   }
                   return m;
